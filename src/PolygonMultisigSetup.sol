@@ -5,14 +5,14 @@ pragma solidity 0.8.24;
 import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
 import {PluginSetup, IPluginSetup} from "@aragon/osx/framework/plugin/setup/PluginSetup.sol";
 import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
-import {MyPlugin} from "./MyPlugin.sol";
+import {PolygonMultisig} from "./PolygonMultisig.sol";
 
-/// @title MyPluginSetup build 1
-contract MyPluginSetup is PluginSetup {
+/// @title PolygonMultisigSetup build 1
+contract PolygonMultisigSetup is PluginSetup {
     address private immutable IMPLEMEMTATION;
 
     constructor() {
-        IMPLEMEMTATION = address(new MyPlugin());
+        IMPLEMEMTATION = address(new PolygonMultisig());
     }
 
     /// @inheritdoc IPluginSetup
@@ -20,11 +20,12 @@ contract MyPluginSetup is PluginSetup {
         address _dao,
         bytes memory _data
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
-        uint256 number = abi.decode(_data, (uint256));
+        (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) = abi
+            .decode(_data, (address[], PolygonMultisig.MultisigSettings));
 
         plugin = createERC1967Proxy(
             IMPLEMEMTATION,
-            abi.encodeCall(MyPlugin.initialize, (IDAO(_dao), number))
+            abi.encodeCall(PolygonMultisig.initialize, (IDAO(_dao), members, multisigSettings))
         );
 
         PermissionLib.MultiTargetPermission[]

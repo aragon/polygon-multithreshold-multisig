@@ -9,10 +9,10 @@ import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFac
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
 import {hashHelpers, PluginSetupRef} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
 
-import {MyPlugin} from "../src/MyPlugin.sol";
-import {MyPluginSetup} from "../src/MyPluginSetup.sol";
+import {PolygonMultisig} from "../src/PolygonMultisig.sol";
+import {PolygonMultisigSetup} from "../src/PolygonMultisigSetup.sol";
 
-contract MyPluginScript is Script {
+contract PolygonMultisigScript is Script {
     address pluginRepoFactory;
     DAOFactory daoFactory;
     string nameWithEntropy;
@@ -29,7 +29,7 @@ contract MyPluginScript is Script {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
         // 1. Deploying the Plugin Setup
-        MyPluginSetup pluginSetup = deployPluginSetup();
+        PolygonMultisigSetup pluginSetup = deployPluginSetup();
 
         // 2. Publishing it in the Aragon OSx Protocol
         PluginRepo pluginRepo = deployPluginRepo(address(pluginSetup));
@@ -68,8 +68,8 @@ contract MyPluginScript is Script {
         }
     }
 
-    function deployPluginSetup() public returns (MyPluginSetup) {
-        MyPluginSetup pluginSetup = new MyPluginSetup();
+    function deployPluginSetup() public returns (PolygonMultisigSetup) {
+        PolygonMultisigSetup pluginSetup = new PolygonMultisigSetup();
         return pluginSetup;
     }
 
