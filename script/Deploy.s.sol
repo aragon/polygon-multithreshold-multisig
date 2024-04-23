@@ -90,6 +90,7 @@ contract PolygonMultisigScript is Script {
     function getPluginSettings(
         PluginRepo pluginRepo
     ) public pure returns (DAOFactory.PluginSettings[] memory pluginSettings) {
+        // TODO: Change this to actual plugin settings
         uint256 pluginCounterNumber = 1;
         bytes memory pluginSettingsData = abi.encode(pluginCounterNumber);
 

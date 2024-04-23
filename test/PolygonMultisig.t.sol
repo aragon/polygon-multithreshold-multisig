@@ -14,7 +14,12 @@ abstract contract PolygonMultisigTest is AragonTest {
     PolygonMultisigSetup internal setup;
     address[] members = [address(0xB0b)];
     PolygonMultisig.MultisigSettings multisigSettings =
-        PolygonMultisig.MultisigSettings({onlyListed: true, minApprovals: 1});
+        PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            emergencyMinApprovals: 1,
+            delayDuration: 1 days
+        });
 
     function setUp() public virtual {
         setup = new PolygonMultisigSetup();

@@ -30,6 +30,11 @@ contract PolygonMultisig is
     /// @param approvers The approves casted by the approvers.
     /// @param actions The actions to be executed when the proposal passes.
     /// @param _allowFailureMap A bitmap allowing the proposal to succeed, even if individual actions might revert. If the bit at index `i` is 1, the proposal succeeds even if the `i`th action reverts. A failure map value of 0 requires every action to not revert.
+    /// @param confirmations The number of confirmations casted (second approval round).
+    /// @param confirmation_approvers The confirmations casted by the confirmers.
+    /// @param metadata The metadata of the proposal, usually stored in IPFS.
+    /// @param secondaryMetadata The secondary metadata of the proposal, can only be changed once.
+    /// @param firstDelayStartBlock The block number when the first delay started.
     struct Proposal {
         bool executed;
         uint16 approvals;
@@ -37,6 +42,12 @@ contract PolygonMultisig is
         mapping(address => bool) approvers;
         IDAO.Action[] actions;
         uint256 allowFailureMap;
+        // New data
+        uint16 confirmations;
+        mapping(address => bool) confirmation_approvers;
+        bytes metadata;
+        bytes secondaryMetadata;
+        uint64 firstDelayStartBlock;
     }
 
     /// @notice A container for the proposal parameters.
@@ -44,19 +55,31 @@ contract PolygonMultisig is
     /// @param snapshotBlock The number of the block prior to the proposal creation.
     /// @param startDate The timestamp when the proposal starts.
     /// @param endDate The timestamp when the proposal expires.
+    /// @param delayDuration The duration of the delay.
+    /// @param emergency Whether the proposal is an emergency proposal or not.
+    /// @param emergencyMinApprovals The number of approvals required for an emergency proposal.
     struct ProposalParameters {
         uint16 minApprovals;
         uint64 snapshotBlock;
         uint64 startDate;
         uint64 endDate;
+        // New data
+        uint64 delayDuration;
+        bool emergency;
+        uint16 emergencyMinApprovals;
     }
 
     /// @notice A container for the plugin settings.
     /// @param onlyListed Whether only listed addresses can create a proposal or not.
     /// @param minApprovals The minimal number of approvals required for a proposal to pass.
+    /// @param emergencyMinApprovals The minimal number of approvals required for an emergency proposal to pass.
+    /// @param delayDuration The duration of the delay.
     struct MultisigSettings {
         bool onlyListed;
         uint16 minApprovals;
+        // New data
+        uint16 emergencyMinApprovals;
+        uint64 delayDuration;
     }
 
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
@@ -211,6 +234,7 @@ contract PolygonMultisig is
     /// @param _tryExecution If `true`, execution is tried after the vote cast. The call does not revert if early execution is not possible.
     /// @param _startDate The start date of the proposal.
     /// @param _endDate The end date of the proposal.
+    /// @param _emergency Whether the proposal is an emergency proposal or not.
     /// @return proposalId The ID of the proposal.
     function createProposal(
         bytes calldata _metadata,
@@ -219,7 +243,8 @@ contract PolygonMultisig is
         bool _approveProposal,
         bool _tryExecution,
         uint64 _startDate,
-        uint64 _endDate
+        uint64 _endDate,
+        bool _emergency
     ) external returns (uint256 proposalId) {
         if (multisigSettings.onlyListed && !isListed(_msgSender())) {
             revert ProposalCreationForbidden(_msgSender());
@@ -257,11 +282,16 @@ contract PolygonMultisig is
 
         // Create the proposal
         Proposal storage proposal_ = proposals[proposalId];
+        proposal_.metadata = _metadata;
 
         proposal_.parameters.snapshotBlock = snapshotBlock;
         proposal_.parameters.startDate = _startDate;
         proposal_.parameters.endDate = _endDate;
         proposal_.parameters.minApprovals = multisigSettings.minApprovals;
+        // setting the new data
+        proposal_.parameters.emergency = _emergency;
+        proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;
+        proposal_.parameters.delayDuration = multisigSettings.delayDuration;
 
         // Reduce costs
         if (_allowFailureMap != 0) {
