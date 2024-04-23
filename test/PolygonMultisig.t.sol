@@ -77,11 +77,75 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _actions: _actions,
             _allowFailureMap: 0,
             _approveProposal: false,
-            _tryExecution: false,
             _startDate: uint64(0),
             _endDate: uint64(block.timestamp + 1 days),
             _emergency: false
         });
         assertEq(plugin.proposalCount(), 1);
+    }
+
+    function test_reverts_if_not_member() public {
+        vm.prank(address(0x0));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalCreationForbidden.selector, address(0x0))
+        );
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+    }
+
+    function test_reverts_if_start_date_out_of_bounds() public {
+        vm.prank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PolygonMultisig.DateOutOfBounds.selector,
+                uint64(block.timestamp),
+                uint64(1)
+            )
+        );
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(1),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+    }
+
+    function test_reverts_if_end_date_out_of_bounds() public {
+        vm.prank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PolygonMultisig.DateOutOfBounds.selector,
+                uint64(block.timestamp),
+                0
+            )
+        );
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(0),
+            _emergency: false
+        });
     }
 }
