@@ -302,6 +302,10 @@ contract PolygonMultisig is
                 ++i;
             }
         }
+
+        if (_approveProposal) {
+            approve(proposalId, false);
+        }
     }
 
     /// @inheritdoc IMultisig

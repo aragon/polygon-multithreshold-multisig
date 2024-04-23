@@ -67,7 +67,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         super.setUp();
     }
 
-    function test_createProposal() public {
+    function test_proposal_creation() public {
         vm.prank(address(0xB0b));
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
@@ -82,6 +82,24 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
         assertEq(plugin.proposalCount(), 1);
+    }
+
+    function test_voting_within_proposal_creation() public {
+        vm.prank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: true,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+        assertEq(plugin.proposalCount(), 1);
+        assertEq(plugin.hasApproved(0, address(0xB0b)), true);
     }
 
     function test_reverts_if_not_member() public {
