@@ -39,8 +39,17 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
 
     function test_initialize() public {
         assertEq(address(plugin.dao()), address(dao));
-        // TODO: Check the members are right
-        // TODO: Check the multisigSettings are right
+        assertEq(plugin.isMember(address(0xB0b)), true);
+        (
+            bool _onlyListed,
+            uint16 _minApprovals,
+            uint16 _emergencyMinApprovals,
+            uint64 _delayDuration
+        ) = plugin.multisigSettings();
+        assertEq(_onlyListed, multisigSettings.onlyListed);
+        assertEq(_minApprovals, multisigSettings.minApprovals);
+        assertEq(_emergencyMinApprovals, multisigSettings.emergencyMinApprovals);
+        assertEq(_delayDuration, multisigSettings.delayDuration);
     }
 
     function test_reverts_if_reinitialized() public {
