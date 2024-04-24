@@ -348,7 +348,11 @@ contract PolygonMultisig is
     /// @return approvals The number of approvals casted.
     /// @return parameters The parameters of the proposal vote.
     /// @return actions The actions to be executed in the associated DAO after the proposal has passed.
-    /// @param allowFailureMap A bitmap allowing the proposal to succeed, even if individual actions might revert. If the bit at index `i` is 1, the proposal succeeds even if the `i`th action reverts. A failure map value of 0 requires every action to not revert.
+    /// @return allowFailureMap A bitmap allowing the proposal to succeed, even if individual actions might revert. If the bit at index `i` is 1, the proposal succeeds even if the `i`th action reverts. A failure map value of 0 requires every action to not revert.
+    /// @return confirmations The number of confirmations casted (second approval round).
+    /// @return metadata The metadata of the proposal, usually stored in IPFS.
+    /// @return secondaryMetadata The secondary metadata of the proposal, can only be changed once.
+    /// @return firstDelayStartBlock The block number when the first delay started.
     function getProposal(
         uint256 _proposalId
     )
@@ -359,7 +363,11 @@ contract PolygonMultisig is
             uint16 approvals,
             ProposalParameters memory parameters,
             IDAO.Action[] memory actions,
-            uint256 allowFailureMap
+            uint256 allowFailureMap,
+            uint16 confirmations,
+            bytes memory metadata,
+            bytes memory secondaryMetadata,
+            uint64 firstDelayStartBlock
         )
     {
         Proposal storage proposal_ = proposals[_proposalId];
@@ -369,6 +377,10 @@ contract PolygonMultisig is
         parameters = proposal_.parameters;
         actions = proposal_.actions;
         allowFailureMap = proposal_.allowFailureMap;
+        confirmations = proposal_.confirmations;
+        metadata = proposal_.metadata;
+        secondaryMetadata = proposal_.secondaryMetadata;
+        firstDelayStartBlock = proposal_.firstDelayStartBlock;
     }
 
     /// @inheritdoc IMultisig
