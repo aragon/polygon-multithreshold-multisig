@@ -355,7 +355,7 @@ contract PolygonMultisig is
             revert SecondaryMetadataAlreadySet();
         }
 
-        if (proposal_.firstDelayStartBlock != 0) {
+        if (proposal_.firstDelayStartBlock != 0 && !proposal_.parameters.emergency) {
             revert DelayAlreadyStarted();
         }
 
