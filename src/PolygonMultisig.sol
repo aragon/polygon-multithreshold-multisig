@@ -134,6 +134,16 @@ contract PolygonMultisig is
     /// @param actual The actual value.
     error DateOutOfBounds(uint64 limit, uint64 actual);
 
+    /// @notice Emitted when sender in not in the member list.
+    /// @param account The address of the sender that is not in the member list.
+    error NotInMemberList(address account);
+
+    /// @notice Secondary metadata was already set before and can only be set once
+    error SecondaryMetadataAlreadySet();
+
+    /// @notice The delay has already started and secondary metadata can't be set anymore
+    error DelayAlreadyStarted();
+
     /// @notice Emitted when a proposal is approve by an approver.
     /// @param proposalId The ID of the proposal.
     /// @param approver The approver casting the approve.
@@ -330,6 +340,26 @@ contract PolygonMultisig is
         if (_tryExecution && _canExecute(_proposalId)) {
             _execute(_proposalId);
         }
+    }
+
+    /// @notice Allows to set the secondary metadata of a proposal.
+    /// @param _proposalId The ID of the proposal.
+    /// @param _secondaryMetadata The secondary metadata of the proposal.
+    function setSecondaryMetadata(uint256 _proposalId, bytes calldata _secondaryMetadata) external {
+        if (multisigSettings.onlyListed && !isListed(_msgSender())) {
+            revert NotInMemberList(_msgSender());
+        }
+        Proposal storage proposal_ = proposals[_proposalId];
+
+        if (proposal_.secondaryMetadata.length != 0) {
+            revert SecondaryMetadataAlreadySet();
+        }
+
+        if (proposal_.firstDelayStartBlock != 0) {
+            revert DelayAlreadyStarted();
+        }
+
+        proposal_.secondaryMetadata = _secondaryMetadata;
     }
 
     /// @inheritdoc IMultisig
