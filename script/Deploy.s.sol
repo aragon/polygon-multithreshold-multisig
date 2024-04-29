@@ -89,10 +89,18 @@ contract PolygonMultisigScript is Script {
 
     function getPluginSettings(
         PluginRepo pluginRepo
-    ) public pure returns (DAOFactory.PluginSettings[] memory pluginSettings) {
-        // TODO: Change this to actual plugin settings
-        uint256 pluginCounterNumber = 1;
-        bytes memory pluginSettingsData = abi.encode(pluginCounterNumber);
+    ) public view returns (DAOFactory.PluginSettings[] memory pluginSettings) {
+        // TODO: Get the members from a json file
+        address[] memory members = new address[](1);
+        members[0] = address(msg.sender);
+        PolygonMultisig.MultisigSettings memory multisigSettings = PolygonMultisig
+            .MultisigSettings({
+                onlyListed: true,
+                minApprovals: 1,
+                emergencyMinApprovals: 1,
+                delayDuration: 1 days
+            });
+        bytes memory pluginSettingsData = abi.encode(members, multisigSettings);
 
         PluginRepo.Tag memory tag = PluginRepo.Tag(1, 1);
         pluginSettings = new DAOFactory.PluginSettings[](1);
