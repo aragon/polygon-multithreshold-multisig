@@ -134,6 +134,22 @@ contract PolygonMultisig is
     /// @param actual The actual value.
     error DateOutOfBounds(uint64 limit, uint64 actual);
 
+    /// @notice Emitted when sender in not in the member list.
+    /// @param account The address of the sender that is not in the member list.
+    error NotInMemberList(address account);
+
+    /// @notice Secondary metadata was already set before and can only be set once
+    error SecondaryMetadataAlreadySet();
+
+    /// @notice The delay has already started and secondary metadata can't be set anymore
+    error DelayAlreadyStarted();
+
+    /// @notice The delay can't be started for an emergency proposal
+    error EmergencyProposalCantBeDelayed();
+
+    /// @notice Thrown if the proposal has not enough approvals to start the delay.
+    error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
+
     /// @notice Emitted when a proposal is approve by an approver.
     /// @param proposalId The ID of the proposal.
     /// @param approver The approver casting the approve.
@@ -388,6 +404,35 @@ contract PolygonMultisig is
         return proposals[_proposalId].approvers[_account];
     }
 
+    /// @notice Allows to start the delay for a proposal.
+    /// @param _proposalId The ID of the proposal.
+    /// @param _secondaryMetadata The secondary metadata of the proposal.
+    function startProposalDelay(uint256 _proposalId, bytes calldata _secondaryMetadata) external {
+        if (!isListed(_msgSender())) {
+            revert NotInMemberList(_msgSender());
+        }
+
+        Proposal storage proposal_ = proposals[_proposalId];
+
+        if (proposal_.parameters.emergency) {
+            revert EmergencyProposalCantBeDelayed();
+        }
+        if (proposal_.firstDelayStartBlock != 0) {
+            revert DelayAlreadyStarted();
+        }
+
+        if (proposal_.approvals < proposal_.parameters.minApprovals) {
+            revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);
+        }
+
+        _setSecondaryMetadata(proposal_, _secondaryMetadata);
+
+        // TODO: This isn't the full logic to start the delay,
+        // it's just a placeholder. Until we get to that ticket.
+        // There are more comprobations to be done along the contract.
+        proposal_.firstDelayStartBlock = block.number.toUint64();
+    }
+
     /// @inheritdoc IMultisig
     function execute(uint256 _proposalId) public {
         if (!_canExecute(_proposalId)) {
@@ -490,6 +535,20 @@ contract PolygonMultisig is
             onlyListed: _multisigSettings.onlyListed,
             minApprovals: _multisigSettings.minApprovals
         });
+    }
+
+    /// @notice Allows to set the secondary metadata of a proposal.
+    /// @param proposal_ The proposal to be changed.
+    /// @param _secondaryMetadata The secondary metadata of the proposal.
+    function _setSecondaryMetadata(
+        Proposal storage proposal_,
+        bytes calldata _secondaryMetadata
+    ) internal {
+        if (proposal_.secondaryMetadata.length != 0) {
+            revert SecondaryMetadataAlreadySet();
+        }
+
+        proposal_.secondaryMetadata = _secondaryMetadata;
     }
 
     /// @dev This empty reserved space is put in place to allow future versions to add new
