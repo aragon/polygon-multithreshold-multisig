@@ -147,6 +147,9 @@ contract PolygonMultisig is
     /// @notice The delay can't be started for an emergency proposal
     error EmergencyProposalCantBeDelayed();
 
+    /// @notice Thrown if the proposal has not enough approvals to start the delay.
+    error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
+
     /// @notice Emitted when a proposal is approve by an approver.
     /// @param proposalId The ID of the proposal.
     /// @param approver The approver casting the approve.
@@ -416,6 +419,10 @@ contract PolygonMultisig is
         }
         if (proposal_.firstDelayStartBlock != 0) {
             revert DelayAlreadyStarted();
+        }
+
+        if (proposal_.approvals < proposal_.parameters.minApprovals) {
+            revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);
         }
 
         _setSecondaryMetadata(proposal_, _secondaryMetadata);
