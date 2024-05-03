@@ -417,7 +417,11 @@ contract PolygonMultisig is
         if (proposal_.parameters.emergency) {
             revert EmergencyProposalCantBeDelayed();
         }
-        if (proposal_.firstDelayStartBlock != 0) {
+        uint64 currentTimestamp64 = block.timestamp.toUint64();
+        if (
+            proposal_.firstDelayStartBlock != 0 ||
+            uint64(proposal_.parameters.endDate) < currentTimestamp64
+        ) {
             revert DelayAlreadyStarted();
         }
 
