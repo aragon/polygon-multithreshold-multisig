@@ -236,7 +236,8 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
     }
 
     function test_secondary_metadata() public {
-        vm.prank(address(0xB0b));
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0, false);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
         (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
@@ -252,6 +253,7 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
 
     function test_reverts_if_metadata_was_already_set() public {
         vm.startPrank(address(0xB0b));
+        plugin.approve(0, false);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
         vm.expectRevert(PolygonMultisig.DelayAlreadyStarted.selector);
         plugin.startProposalDelay(0, bytes("ipfs://failure"));
