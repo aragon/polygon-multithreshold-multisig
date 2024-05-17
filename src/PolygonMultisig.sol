@@ -115,6 +115,11 @@ contract PolygonMultisig is
     /// @param sender The address of the sender.
     error ApprovalCastForbidden(uint256 proposalId, address sender);
 
+    /// @notice Thrown if a member is not allowed to cast a confirmation.
+    /// @param proposalId The ID of the proposal.
+    /// @param sender The address of the sender.
+    error ConfirmationCastForbidden(uint256 proposalId, address sender);
+
     /// @notice Thrown if the proposal execution is forbidden.
     /// @param proposalId The ID of the proposal.
     error ProposalExecutionForbidden(uint256 proposalId);
@@ -150,10 +155,15 @@ contract PolygonMultisig is
     /// @notice Thrown if the proposal has not enough approvals to start the delay.
     error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
 
-    /// @notice Emitted when a proposal is approve by an approver.
+    /// @notice Emitted when a proposal is approved by an approver.
     /// @param proposalId The ID of the proposal.
     /// @param approver The approver casting the approve.
     event Approved(uint256 indexed proposalId, address indexed approver);
+
+    /// @notice Emitted when a proposal is confirmed by an approver.
+    /// @param proposalId The ID of the proposal.
+    /// @param approver The approver casting the approve.
+    event Confirmed(uint256 indexed proposalId, address indexed approver);
 
     /// @notice Emitted when the plugin settings are set.
     /// @param onlyListed Whether only listed addresses can create a proposal.
@@ -345,8 +355,33 @@ contract PolygonMultisig is
     }
 
     /// @inheritdoc IMultisig
+    function confirm(uint256 _proposalId) public {
+        address approver = _msgSender();
+        if (!_canConfirm(_proposalId, approver)) {
+            revert ConfirmationCastForbidden(_proposalId, approver);
+        }
+
+        Proposal storage proposal_ = proposals[_proposalId];
+        
+        // As the list can never become more than type(uint16).max(due to addAddresses check)
+        // It's safe to use unchecked as it would never overflow.
+        unchecked {
+            proposal_.confirmations += 1;
+        }
+
+        proposal_.approvers[approver] = true;
+
+        emit Confirmed({proposalId: _proposalId, approver: approver});
+    }
+
+    /// @inheritdoc IMultisig
     function canApprove(uint256 _proposalId, address _account) external view returns (bool) {
         return _canApprove(_proposalId, _account);
+    }
+
+    /// @inheritdoc IMultisig
+    function canConfirm(uint256 _proposalId, address _account) external view returns (bool) {
+        return _canConfirm(_proposalId, _account);
     }
 
     /// @inheritdoc IMultisig
@@ -478,6 +513,39 @@ contract PolygonMultisig is
 
         if (proposal_.approvers[_account]) {
             // The approver has already approved
+            return false;
+        }
+
+        return true;
+    }
+
+    /// @notice Internal function to check if an account can confirm a proposal. It assumes the queried proposal exists.
+    /// @param _proposalId The ID of the proposal.
+    /// @param _account The account to check.
+    /// @return Returns `true` if the given account can confirm on a certain proposal and `false` otherwise.
+    function _canConfirm(uint256 _proposalId, address _account) internal view returns (bool) {
+        Proposal storage proposal_ = proposals[_proposalId];
+
+        if (!_isProposalOpen(proposal_)) {
+            // The proposal was executed already
+            return false;
+        }
+
+        if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {
+            // The confirmer has no voting power.
+            return false;
+        }
+
+        if (
+            proposal_.firstDelayStartBlock == 0 ||
+            proposal_.firstDelayStartBlock + proposal_.parameters.delayDuration > block.number
+        ) {
+            // The delay has not started yet or has finished
+            return false;
+        }
+
+        if (proposal_.confirmation_approvers[_account]) {
+            // The confirmer has already confirmed
             return false;
         }
 
