@@ -317,6 +317,24 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
         ( , , , uint64 _delayDuration) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+        plugin.confirm(0);
+        ( , , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(_confirmations, uint16(1));
+    }
+
+    function test_confirmation_and_execution() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        ( , , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+        plugin.confirm(0);
+        ( , , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(_confirmations, uint16(1));
+        plugin.execute(0);
+        (bool _executed, , , , , , , , ) = plugin.getProposal(0);
+        assertEq(_executed, true);
     }
 
     // executes after a proposal has been approved
@@ -331,6 +349,23 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
 
     function test_reverts_if_not_enough_approvals() public {
         vm.startPrank(address(0xB0b));
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+        );
+        plugin.execute(0);
+    }
+
+    function test_reverts_confirmation_and_late_execution() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        ( , , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+        plugin.confirm(0);
+        ( , , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(_confirmations, uint16(1));
+        vm.warp(block.timestamp + 2 days);
         vm.expectRevert(
             abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
         );
