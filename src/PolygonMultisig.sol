@@ -34,7 +34,7 @@ contract PolygonMultisig is
     /// @param confirmation_approvers The confirmations casted by the confirmers.
     /// @param metadata The metadata of the proposal, usually stored in IPFS.
     /// @param secondaryMetadata The secondary metadata of the proposal, can only be changed once.
-    /// @param firstDelayStartBlock The block number when the first delay started.
+    /// @param firstDelayStartTimestamp The block timestamp when the first delay started.
     struct Proposal {
         bool executed;
         uint16 approvals;
@@ -47,7 +47,7 @@ contract PolygonMultisig is
         mapping(address => bool) confirmation_approvers;
         bytes metadata;
         bytes secondaryMetadata;
-        uint64 firstDelayStartBlock;
+        uint64 firstDelayStartTimestamp;
     }
 
     /// @notice A container for the proposal parameters.
@@ -154,6 +154,9 @@ contract PolygonMultisig is
 
     /// @notice Thrown if the proposal has not enough approvals to start the delay.
     error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
+
+    /// @notice Emitted when the proposal delay has started.
+    event ProposalDelayStarted(uint256 proposalId, bytes secondaryMetadata);
 
     /// @notice Emitted when a proposal is approved by an approver.
     /// @param proposalId The ID of the proposal.
@@ -399,7 +402,7 @@ contract PolygonMultisig is
     /// @return confirmations The number of confirmations casted (second approval round).
     /// @return metadata The metadata of the proposal, usually stored in IPFS.
     /// @return secondaryMetadata The secondary metadata of the proposal, can only be changed once.
-    /// @return firstDelayStartBlock The block number when the first delay started.
+    /// @return firstDelayStartTimestamp The block timestamp when the first delay started.
     function getProposal(
         uint256 _proposalId
     )
@@ -414,7 +417,7 @@ contract PolygonMultisig is
             uint16 confirmations,
             bytes memory metadata,
             bytes memory secondaryMetadata,
-            uint64 firstDelayStartBlock
+            uint64 firstDelayStartTimestamp
         )
     {
         Proposal storage proposal_ = proposals[_proposalId];
@@ -427,7 +430,7 @@ contract PolygonMultisig is
         confirmations = proposal_.confirmations;
         metadata = proposal_.metadata;
         secondaryMetadata = proposal_.secondaryMetadata;
-        firstDelayStartBlock = proposal_.firstDelayStartBlock;
+        firstDelayStartTimestamp = proposal_.firstDelayStartTimestamp;
     }
 
     /// @inheritdoc IMultisig
@@ -450,7 +453,7 @@ contract PolygonMultisig is
         }
         uint64 currentTimestamp64 = block.timestamp.toUint64();
         if (
-            proposal_.firstDelayStartBlock != 0 ||
+            proposal_.firstDelayStartTimestamp != 0 ||
             uint64(proposal_.parameters.endDate) < currentTimestamp64
         ) {
             revert DelayAlreadyStarted();
@@ -462,7 +465,8 @@ contract PolygonMultisig is
 
         _setSecondaryMetadata(proposal_, _secondaryMetadata);
 
-        proposal_.firstDelayStartBlock = block.number.toUint64();
+        proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();
+        emit ProposalDelayStarted(_proposalId, _secondaryMetadata);
     }
 
     /// @inheritdoc IMultisig
@@ -537,8 +541,8 @@ contract PolygonMultisig is
         }
 
         if (
-            proposal_.firstDelayStartBlock == 0 ||
-            proposal_.firstDelayStartBlock + proposal_.parameters.delayDuration > block.number
+            proposal_.firstDelayStartTimestamp == 0 ||
+            proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration > block.timestamp
         ) {
             // The delay has not started yet or has finished
             return false;

@@ -305,9 +305,18 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
             _allowFailureMap: 0,
             _approveProposal: false,
             _startDate: uint64(0),
-            _endDate: uint64(block.timestamp + 1 days),
+            _endDate: uint64(block.timestamp + 2 days),
             _emergency: false
         });
+    }
+
+    function test_confirmation() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        ( , , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
     }
 
     // executes after a proposal has been approved
