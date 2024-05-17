@@ -237,7 +237,7 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
 
     function test_secondary_metadata() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0, false);
+        plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
         (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
@@ -253,9 +253,68 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
 
     function test_reverts_if_metadata_was_already_set() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0, false);
+        plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
         vm.expectRevert(PolygonMultisig.DelayAlreadyStarted.selector);
         plugin.startProposalDelay(0, bytes("ipfs://failure"));
+    }
+}
+
+contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(address(0xB0b));
+        IDAO.Action[] memory _actions = new IDAO.Action[](0);
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: true
+        });
+    }
+
+    // executes after a proposal has been approved
+    function test_execute_proposal() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.execute(0);
+        (bool _executed, , , , , , , , ) = plugin.getProposal(0);
+        assertEq(_executed, true);
+    }
+
+    function test_reverts_if_not_enough_approvals_in_emergency() public {
+        vm.startPrank(address(0xB0b));
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+        );
+        plugin.execute(0);
+    }
+}
+
+contract PolygonMultisigExecution is PolygonMultisigTest {
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(address(0xB0b));
+        IDAO.Action[] memory _actions = new IDAO.Action[](0);
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+    }
+
+    function test_reverts_if_not_enough_approvals() public {
+        vm.startPrank(address(0xB0b));
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+        );
+        plugin.execute(0);
     }
 }

@@ -18,8 +18,7 @@ interface IMultisig {
 
     /// @notice Approves and, optionally, executes the proposal.
     /// @param _proposalId The ID of the proposal.
-    /// @param _tryExecution If `true`, execution is tried after the approval cast. The call does not revert if execution is not possible.
-    function approve(uint256 _proposalId, bool _tryExecution) external;
+    function approve(uint256 _proposalId) external;
 
     /// @notice Checks if an account can participate on a proposal vote. This can be because the vote
     /// - was executed, or
