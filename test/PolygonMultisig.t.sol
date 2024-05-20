@@ -513,6 +513,40 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xDad)));
         plugin.confirm(0);
     }
+
+    function test_reverts_confirmation_if_proposal_not_approved() public {
+        vm.startPrank(address(0xB0b));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xB0b)));
+        plugin.confirm(0);
+    }
+
+    function test_reverts_confirmation_if_proposal_already_executed() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (,,, uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        plugin.execute(0);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xB0b)));
+        plugin.confirm(0);
+    }
+
+    function test_reverts_confirmation_if_proposal_delay_not_started() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xB0b)));
+        plugin.confirm(0);
+    }
+
+    function test_reverts_confirmation_if_proposal_delay_not_ended() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        vm.warp(block.timestamp + 1 days - 1);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xB0b)));
+        plugin.confirm(0);
+    }
 }
 
 contract PolygonMultisigExecution is PolygonMultisigTest {
