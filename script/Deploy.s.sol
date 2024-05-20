@@ -21,7 +21,7 @@ contract PolygonMultisigScript is Script {
     function setUp() public {
         pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
         daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
-        nameWithEntropy = string.concat("my-plugin-", vm.toString(block.timestamp));
+        nameWithEntropy = string.concat("polygon-multisig-", vm.toString(block.timestamp));
     }
 
     function run() public {
