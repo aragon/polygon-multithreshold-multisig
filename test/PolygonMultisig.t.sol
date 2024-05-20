@@ -218,6 +218,18 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
+    function test_delay_lasts_the_defined_amount() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (,,,,,,, bytes memory _secondaryMetadata,) = plugin.getProposal(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://world"));
+        
+        assertEq(plugin.canConfirm(0, address(0xB0b)), false);
+        vm.warp(block.timestamp + 1 days);
+        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+    }
+
     function test_reverts_if_not_member() public {
         vm.prank(address(0x0));
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.NotInMemberList.selector, address(0x0)));
@@ -230,6 +242,20 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         plugin.startProposalDelay(0, bytes("ipfs://world"));
         vm.expectRevert(PolygonMultisig.DelayAlreadyStarted.selector);
         plugin.startProposalDelay(0, bytes("ipfs://failure"));
+    }
+
+    function test_reverts_if_delay_started_after_end_date() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        vm.warp(block.timestamp + 1 days + 1);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.DelayAlreadyStarted.selector));
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_not_enough_approvals() public {
+        vm.startPrank(address(0xB0b));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.InsuficientApprovals.selector, 0, 1));
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
     }
 }
 
