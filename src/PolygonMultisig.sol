@@ -538,8 +538,7 @@ contract PolygonMultisig is IMultisig, IMembership, PluginUUPSUpgradeable, Propo
             return false;
         }
 
-        // TODO: Add here the check for the confirmations
-        if (!proposal_.parameters.emergency && proposal_.confirmations < proposal_.parameters.emergencyMinApprovals) {
+        if (!proposal_.parameters.emergency && proposal_.confirmations < proposal_.parameters.minApprovals) {
             return false;
         }
 
