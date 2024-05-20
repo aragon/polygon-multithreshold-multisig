@@ -542,7 +542,9 @@ contract PolygonMultisig is IMultisig, IMembership, PluginUUPSUpgradeable, Propo
             return false;
         }
 
-        return proposal_.approvals >= proposal_.parameters.minApprovals;
+        return proposal_.parameters.emergency 
+            ? proposal_.approvals >= proposal_.parameters.emergencyMinApprovals
+            : proposal_.approvals >= proposal_.parameters.minApprovals;
     }
 
     /// @notice Internal function to check if a proposal vote is still open.
