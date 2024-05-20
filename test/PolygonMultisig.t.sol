@@ -31,10 +31,33 @@ abstract contract PolygonMultisigTest is AragonTest {
         dao = _dao;
         plugin = PolygonMultisig(_plugin);
         vm.roll(block.number + 1);
-        // vm.warp(1);
     }
 }
 
+abstract contract PolygonMultisigExtraMembersTest is AragonTest {
+    DAO internal dao;
+    PolygonMultisig internal plugin;
+    PolygonMultisigSetup internal setup;
+    address[] members = [address(0xB0b), address(0xDad), address(0xDead), address(0xBeef)];
+    PolygonMultisig.MultisigSettings multisigSettings = PolygonMultisig.MultisigSettings({
+        onlyListed: true,
+        minApprovals: 1,
+        emergencyMinApprovals: 3,
+        delayDuration: 1 days
+    });
+
+    function setUp() public virtual {
+        vm.prank(address(0xB0b));
+        setup = new PolygonMultisigSetup();
+        bytes memory setupData = abi.encode(members, multisigSettings);
+
+        (DAO _dao, address _plugin) = createMockDaoWithPlugin(setup, setupData);
+
+        dao = _dao;
+        plugin = PolygonMultisig(_plugin);
+        vm.roll(block.number + 1);
+    }
+}
 
 contract PolygonMultisigInitializeTest is PolygonMultisigTest {
     function setUp() public override {
@@ -286,6 +309,56 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
 
     function test_reverts_if_not_enough_approvals_in_emergency() public {
         vm.startPrank(address(0xB0b));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0));
+        plugin.execute(0);
+    }
+}
+
+contract PolygonMultisigEmergencyExtraMembersFlows is PolygonMultisigExtraMembersTest {
+    function setUp() public override {
+        super.setUp();
+        vm.startPrank(address(0xB0b));
+        IDAO.Action[] memory _actions = new IDAO.Action[](0);
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: true
+        });
+        vm.stopPrank();
+    }
+
+    // executes after a proposal has been approved
+    function test_execute_proposal() public {
+        vm.prank(address(0xB0b));
+        plugin.approve(0);
+        vm.stopPrank();
+
+        vm.prank(address(0xDead));
+        plugin.approve(0);
+        vm.stopPrank();
+
+        vm.prank(address(0xBeef));
+        plugin.approve(0);
+        vm.stopPrank();
+
+        plugin.execute(0);
+        (bool _executed,,,,,,,,) = plugin.getProposal(0);
+        assertEq(_executed, true);
+    }
+
+    function test_reverts_if_not_enough_approvals_in_emergency() public {
+        vm.prank(address(0xB0b));
+        plugin.approve(0);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0));
+        plugin.execute(0);
+        vm.stopPrank();
+
+        vm.prank(address(0xDead));
+        plugin.approve(0);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0));
         plugin.execute(0);
     }
