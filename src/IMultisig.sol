@@ -29,7 +29,7 @@ interface IMultisig {
     /// @dev The function assumes the queried proposal exists.
     function canApprove(uint256 _proposalId, address _account) external view returns (bool);
 
-    /// @notice Confirms the proposal 
+    /// @notice Confirms the proposal
     /// @param _proposalId The ID of the proposal.
     function confirm(uint256 _proposalId) external;
 
