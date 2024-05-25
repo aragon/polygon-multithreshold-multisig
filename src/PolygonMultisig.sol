@@ -320,12 +320,12 @@ contract PolygonMultisig is
         }
 
         if (_approveProposal) {
-            approve(proposalId, false);
+            approve(proposalId);
         }
     }
 
     /// @inheritdoc IMultisig
-    function approve(uint256 _proposalId, bool _tryExecution) public {
+    function approve(uint256 _proposalId) public {
         address approver = _msgSender();
         if (!_canApprove(_proposalId, approver)) {
             revert ApprovalCastForbidden(_proposalId, approver);
@@ -342,10 +342,6 @@ contract PolygonMultisig is
         proposal_.approvers[approver] = true;
 
         emit Approved({proposalId: _proposalId, approver: approver});
-
-        if (_tryExecution && _canExecute(_proposalId)) {
-            _execute(_proposalId);
-        }
     }
 
     /// @inheritdoc IMultisig
@@ -431,9 +427,6 @@ contract PolygonMultisig is
 
         _setSecondaryMetadata(proposal_, _secondaryMetadata);
 
-        // TODO: This isn't the full logic to start the delay,
-        // it's just a placeholder. Until we get to that ticket.
-        // There are more comprobations to be done along the contract.
         proposal_.firstDelayStartBlock = block.number.toUint64();
     }
 
@@ -501,6 +494,8 @@ contract PolygonMultisig is
         if (!_isProposalOpen(proposal_)) {
             return false;
         }
+
+        // TODO: Add here the check for the confirmations
 
         return proposal_.approvals >= proposal_.parameters.minApprovals;
     }
