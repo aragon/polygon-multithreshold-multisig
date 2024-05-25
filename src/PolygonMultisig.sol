@@ -496,6 +496,12 @@ contract PolygonMultisig is
         }
 
         // TODO: Add here the check for the confirmations
+        if (
+            !proposal_.parameters.emergency &&
+            proposal_.confirmations < proposal_.parameters.emergencyMinApprovals
+        ) {
+            return false;
+        }
 
         return proposal_.approvals >= proposal_.parameters.minApprovals;
     }

@@ -310,6 +310,16 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
         });
     }
 
+    // executes after a proposal has been approved
+    function test_revert_execute_proposal_after_approving() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+        );
+        plugin.execute(0);
+    }
+
     function test_reverts_if_not_enough_approvals() public {
         vm.startPrank(address(0xB0b));
         vm.expectRevert(
