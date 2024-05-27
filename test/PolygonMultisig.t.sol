@@ -502,8 +502,6 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         plugin.confirm(0);
     }
 
-<<<<<<< feat/285-hardcore-testing
-=======
     function test_reverts_confirmation_if_too_early() public {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
@@ -516,7 +514,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         );
         plugin.confirm(0);
     }
->>>>>>> feat/356-adding-confirmation-logic
+
     function test_reverts_confirmation_if_no_member() public {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
