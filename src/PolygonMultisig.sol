@@ -480,6 +480,11 @@ contract PolygonMultisig is IMultisig, IMembership, PluginUUPSUpgradeable, Propo
             // The proposal was executed already
             return false;
         }
+         
+        if (proposal_.firstDelayStartTimestamp != 0) {
+            // The delay has already started
+            return false;
+        }
 
         if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {
             // The approver has no voting power.

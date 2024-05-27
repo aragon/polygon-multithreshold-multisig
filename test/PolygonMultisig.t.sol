@@ -13,7 +13,7 @@ abstract contract PolygonMultisigTest is AragonTest {
     DAO internal dao;
     PolygonMultisig internal plugin;
     PolygonMultisigSetup internal setup;
-    address[] members = [address(0xB0b)];
+    address[] members = [address(0xB0b), address(0xdeaf)];
     PolygonMultisig.MultisigSettings multisigSettings = PolygonMultisig.MultisigSettings({
         onlyListed: true,
         minApprovals: 1,
@@ -427,6 +427,17 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         plugin.approve(0);
     }
 
+    function test_reverts_if_proposal_already_executed_by_another_account() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+
+        plugin.execute(0);
+        vm.stopPrank();
+        vm.startPrank(address(0xdeaf));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ApprovalCastForbidden.selector, 0, address(0xdeaf)));
+        plugin.approve(0);
+    }
+
     function test_reverts_if_proposal_delay_already_started() public {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
@@ -441,7 +452,9 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         });
         plugin.approve(1);
         plugin.startProposalDelay(1, bytes("ipfs://world"));
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ApprovalCastForbidden.selector, 1, address(0xB0b)));
+        vm.stopPrank();
+        vm.startPrank(address(0xdeaf));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ApprovalCastForbidden.selector, 1, address(0xdeaf)));
         plugin.approve(1);
     }
 
@@ -541,7 +554,9 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         plugin.execute(0);
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xB0b)));
+        vm.stopPrank();
+        vm.startPrank(address(0xdeaf));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ConfirmationCastForbidden.selector, 0, address(0xdeaf)));
         plugin.confirm(0);
     }
 
