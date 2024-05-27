@@ -14,13 +14,7 @@ import {IMultisig} from "./IMultisig.sol";
 /// @title PolygonMultisig - Release 1, Build 1
 /// @author Aragon Association - 2024
 /// @notice The on-chain multisig governance plugin in which a proposal passes if X out of Y approvals are met.
-contract PolygonMultisig is
-    IMultisig,
-    IMembership,
-    PluginUUPSUpgradeable,
-    ProposalUpgradeable,
-    Addresslist
-{
+contract PolygonMultisig is IMultisig, IMembership, PluginUUPSUpgradeable, ProposalUpgradeable, Addresslist {
     using SafeCastUpgradeable for uint256;
 
     /// @notice A container for proposal-related information.
@@ -83,15 +77,11 @@ contract PolygonMultisig is
     }
 
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
-    bytes4 internal constant MULTISIG_INTERFACE_ID =
-        this.initialize.selector ^
-            this.updateMultisigSettings.selector ^
-            this.createProposal.selector ^
-            this.getProposal.selector;
+    bytes4 internal constant MULTISIG_INTERFACE_ID = this.initialize.selector ^ this.updateMultisigSettings.selector
+        ^ this.createProposal.selector ^ this.getProposal.selector;
 
     /// @notice The ID of the permission required to call the `addAddresses` and `removeAddresses` functions.
-    bytes32 public constant UPDATE_MULTISIG_SETTINGS_PERMISSION_ID =
-        keccak256("UPDATE_MULTISIG_SETTINGS_PERMISSION");
+    bytes32 public constant UPDATE_MULTISIG_SETTINGS_PERMISSION_ID = keccak256("UPDATE_MULTISIG_SETTINGS_PERMISSION");
 
     /// @notice A mapping between proposal IDs and proposal information.
     mapping(uint256 => Proposal) internal proposals;
@@ -178,11 +168,10 @@ contract PolygonMultisig is
     /// @param _dao The IDAO interface of the associated DAO.
     /// @param _members The addresses of the initial members to be added.
     /// @param _multisigSettings The multisig settings.
-    function initialize(
-        IDAO _dao,
-        address[] calldata _members,
-        MultisigSettings calldata _multisigSettings
-    ) external initializer {
+    function initialize(IDAO _dao, address[] calldata _members, MultisigSettings calldata _multisigSettings)
+        external
+        initializer
+    {
         __PluginUUPSUpgradeable_init(_dao);
 
         if (_members.length > type(uint16).max) {
@@ -198,29 +187,25 @@ contract PolygonMultisig is
     /// @notice Checks if this or the parent contract supports an interface by its ID.
     /// @param _interfaceId The ID of the interface.
     /// @return Returns `true` if the interface is supported.
-    function supportsInterface(
-        bytes4 _interfaceId
-    ) public view virtual override(PluginUUPSUpgradeable, ProposalUpgradeable) returns (bool) {
-        return
-            _interfaceId == MULTISIG_INTERFACE_ID ||
-            _interfaceId == type(IMultisig).interfaceId ||
-            _interfaceId == type(Addresslist).interfaceId ||
-            _interfaceId == type(IMembership).interfaceId ||
-            super.supportsInterface(_interfaceId);
+    function supportsInterface(bytes4 _interfaceId)
+        public
+        view
+        virtual
+        override(PluginUUPSUpgradeable, ProposalUpgradeable)
+        returns (bool)
+    {
+        return _interfaceId == MULTISIG_INTERFACE_ID || _interfaceId == type(IMultisig).interfaceId
+            || _interfaceId == type(Addresslist).interfaceId || _interfaceId == type(IMembership).interfaceId
+            || super.supportsInterface(_interfaceId);
     }
 
     /// @inheritdoc IMultisig
-    function addAddresses(
-        address[] calldata _members
-    ) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
+    function addAddresses(address[] calldata _members) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
         uint256 newAddresslistLength = addresslistLength() + _members.length;
 
         // Check if the new address list length would be greater than `type(uint16).max`, the maximal number of approvals.
         if (newAddresslistLength > type(uint16).max) {
-            revert AddresslistLengthOutOfBounds({
-                limit: type(uint16).max,
-                actual: newAddresslistLength
-            });
+            revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: newAddresslistLength});
         }
 
         _addAddresses(_members);
@@ -229,17 +214,12 @@ contract PolygonMultisig is
     }
 
     /// @inheritdoc IMultisig
-    function removeAddresses(
-        address[] calldata _members
-    ) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
+    function removeAddresses(address[] calldata _members) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
         uint16 newAddresslistLength = uint16(addresslistLength() - _members.length);
 
         // Check if the new address list length would become less than the current minimum number of approvals required.
         if (newAddresslistLength < multisigSettings.minApprovals) {
-            revert MinApprovalsOutOfBounds({
-                limit: newAddresslistLength,
-                actual: multisigSettings.minApprovals
-            });
+            revert MinApprovalsOutOfBounds({limit: newAddresslistLength, actual: multisigSettings.minApprovals});
         }
 
         _removeAddresses(_members);
@@ -249,9 +229,10 @@ contract PolygonMultisig is
 
     /// @notice Updates the plugin settings.
     /// @param _multisigSettings The new settings.
-    function updateMultisigSettings(
-        MultisigSettings calldata _multisigSettings
-    ) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
+    function updateMultisigSettings(MultisigSettings calldata _multisigSettings)
+        external
+        auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID)
+    {
         _updateMultisigSettings(_multisigSettings);
     }
 
@@ -325,7 +306,7 @@ contract PolygonMultisig is
             proposal_.allowFailureMap = _allowFailureMap;
         }
 
-        for (uint256 i; i < _actions.length; ) {
+        for (uint256 i; i < _actions.length;) {
             proposal_.actions.push(_actions[i]);
             unchecked {
                 ++i;
@@ -365,7 +346,7 @@ contract PolygonMultisig is
         }
 
         Proposal storage proposal_ = proposals[_proposalId];
-        
+
         // As the list can never become more than type(uint16).max(due to addAddresses check)
         // It's safe to use unchecked as it would never overflow.
         unchecked {
@@ -403,9 +384,7 @@ contract PolygonMultisig is
     /// @return metadata The metadata of the proposal, usually stored in IPFS.
     /// @return secondaryMetadata The secondary metadata of the proposal, can only be changed once.
     /// @return firstDelayStartTimestamp The block timestamp when the first delay started.
-    function getProposal(
-        uint256 _proposalId
-    )
+    function getProposal(uint256 _proposalId)
         public
         view
         returns (
@@ -452,10 +431,7 @@ contract PolygonMultisig is
             revert EmergencyProposalCantBeDelayed();
         }
         uint64 currentTimestamp64 = block.timestamp.toUint64();
-        if (
-            proposal_.firstDelayStartTimestamp != 0 ||
-            uint64(proposal_.parameters.endDate) < currentTimestamp64
-        ) {
+        if (proposal_.firstDelayStartTimestamp != 0 || uint64(proposal_.parameters.endDate) < currentTimestamp64) {
             revert DelayAlreadyStarted();
         }
 
@@ -490,12 +466,7 @@ contract PolygonMultisig is
 
         proposal_.executed = true;
 
-        _executeProposal(
-            dao(),
-            _proposalId,
-            proposals[_proposalId].actions,
-            proposals[_proposalId].allowFailureMap
-        );
+        _executeProposal(dao(), _proposalId, proposals[_proposalId].actions, proposals[_proposalId].allowFailureMap);
     }
 
     /// @notice Internal function to check if an account can approve. It assumes the queried proposal exists.
@@ -507,6 +478,11 @@ contract PolygonMultisig is
 
         if (!_isProposalOpen(proposal_)) {
             // The proposal was executed already
+            return false;
+        }
+         
+        if (proposal_.firstDelayStartTimestamp != 0) {
+            // The delay has already started
             return false;
         }
 
@@ -541,8 +517,8 @@ contract PolygonMultisig is
         }
 
         if (
-            proposal_.firstDelayStartTimestamp == 0 ||
-            proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration > block.timestamp
+            proposal_.firstDelayStartTimestamp == 0
+                || proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration > block.timestamp
         ) {
             // The delay has not started yet or has finished
             return false;
@@ -567,15 +543,10 @@ contract PolygonMultisig is
             return false;
         }
 
-        // TODO: Add here the check for the confirmations
-        if (
-            !proposal_.parameters.emergency &&
-            proposal_.confirmations < proposal_.parameters.emergencyMinApprovals
-        ) {
-            return false;
-        }
-
-        return proposal_.approvals >= proposal_.parameters.minApprovals;
+        return proposal_.parameters.emergency 
+            ? proposal_.approvals >= proposal_.parameters.emergencyMinApprovals
+            : (proposal_.approvals >= proposal_.parameters.minApprovals && 
+               proposal_.confirmations >= proposal_.parameters.minApprovals);
     }
 
     /// @notice Internal function to check if a proposal vote is still open.
@@ -583,10 +554,8 @@ contract PolygonMultisig is
     /// @return True if the proposal vote is open, false otherwise.
     function _isProposalOpen(Proposal storage proposal_) internal view returns (bool) {
         uint64 currentTimestamp64 = block.timestamp.toUint64();
-        return
-            !proposal_.executed &&
-            proposal_.parameters.startDate <= currentTimestamp64 &&
-            proposal_.parameters.endDate >= currentTimestamp64;
+        return !proposal_.executed && proposal_.parameters.startDate <= currentTimestamp64
+            && proposal_.parameters.endDate >= currentTimestamp64;
     }
 
     /// @notice Internal function to update the plugin settings.
@@ -595,10 +564,7 @@ contract PolygonMultisig is
         uint16 addresslistLength_ = uint16(addresslistLength());
 
         if (_multisigSettings.minApprovals > addresslistLength_) {
-            revert MinApprovalsOutOfBounds({
-                limit: addresslistLength_,
-                actual: _multisigSettings.minApprovals
-            });
+            revert MinApprovalsOutOfBounds({limit: addresslistLength_, actual: _multisigSettings.minApprovals});
         }
 
         if (_multisigSettings.minApprovals < 1) {
@@ -617,10 +583,7 @@ contract PolygonMultisig is
     /// @notice Allows to set the secondary metadata of a proposal.
     /// @param proposal_ The proposal to be changed.
     /// @param _secondaryMetadata The secondary metadata of the proposal.
-    function _setSecondaryMetadata(
-        Proposal storage proposal_,
-        bytes calldata _secondaryMetadata
-    ) internal {
+    function _setSecondaryMetadata(Proposal storage proposal_, bytes calldata _secondaryMetadata) internal {
         if (proposal_.secondaryMetadata.length != 0) {
             revert SecondaryMetadataAlreadySet();
         }

@@ -21,7 +21,7 @@ contract PolygonMultisigScript is Script {
     function setUp() public {
         pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
         daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
-        nameWithEntropy = string.concat("my-plugin-", vm.toString(block.timestamp));
+        nameWithEntropy = string.concat("polygon-multisig-", vm.toString(block.timestamp));
     }
 
     function run() public {
@@ -48,10 +48,7 @@ contract PolygonMultisigScript is Script {
         Vm.Log[] memory logEntries = vm.getRecordedLogs();
 
         for (uint256 i = 0; i < logEntries.length; i++) {
-            if (
-                logEntries[i].topics[0] ==
-                keccak256("InstallationApplied(address,address,bytes32,bytes32)")
-            ) {
+            if (logEntries[i].topics[0] == keccak256("InstallationApplied(address,address,bytes32,bytes32)")) {
                 pluginAddress.push(address(uint160(uint256(logEntries[i].topics[2]))));
             }
         }
@@ -87,26 +84,24 @@ contract PolygonMultisigScript is Script {
         return DAOFactory.DAOSettings(address(0), "", nameWithEntropy, "");
     }
 
-    function getPluginSettings(
-        PluginRepo pluginRepo
-    ) public view returns (DAOFactory.PluginSettings[] memory pluginSettings) {
+    function getPluginSettings(PluginRepo pluginRepo)
+        public
+        view
+        returns (DAOFactory.PluginSettings[] memory pluginSettings)
+    {
         // TODO: Get the members from a json file
         address[] memory members = new address[](1);
         members[0] = address(msg.sender);
-        PolygonMultisig.MultisigSettings memory multisigSettings = PolygonMultisig
-            .MultisigSettings({
-                onlyListed: true,
-                minApprovals: 1,
-                emergencyMinApprovals: 1,
-                delayDuration: 1 days
-            });
+        PolygonMultisig.MultisigSettings memory multisigSettings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            emergencyMinApprovals: 1,
+            delayDuration: 1 days
+        });
         bytes memory pluginSettingsData = abi.encode(members, multisigSettings);
 
         PluginRepo.Tag memory tag = PluginRepo.Tag(1, 1);
         pluginSettings = new DAOFactory.PluginSettings[](1);
-        pluginSettings[0] = DAOFactory.PluginSettings(
-            PluginSetupRef(tag, pluginRepo),
-            pluginSettingsData
-        );
+        pluginSettings[0] = DAOFactory.PluginSettings(PluginSetupRef(tag, pluginRepo), pluginSettingsData);
     }
 }
