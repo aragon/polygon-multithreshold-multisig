@@ -16,7 +16,7 @@ interface IMultisig {
     /// @param _members The addresses of the members to be removed.
     function removeAddresses(address[] calldata _members) external;
 
-    /// @notice Approves and, optionally, executes the proposal.
+    /// @notice Approves the proposal.
     /// @param _proposalId The ID of the proposal.
     function approve(uint256 _proposalId) external;
 
@@ -28,6 +28,17 @@ interface IMultisig {
     /// @return Returns true if the account is allowed to vote.
     /// @dev The function assumes the queried proposal exists.
     function canApprove(uint256 _proposalId, address _account) external view returns (bool);
+
+    /// @notice Confirms the proposal 
+    /// @param _proposalId The ID of the proposal.
+    function confirm(uint256 _proposalId) external;
+
+    /// @notice Checks if an account can confirm a proposal.
+    /// @param _proposalId The proposal Id.
+    /// @param _account The address of the user to check.
+    /// @return Returns true if the account is allowed to confirm.
+    /// @dev The function assumes the queried proposal exists.
+    function canConfirm(uint256 _proposalId, address _account) external view returns (bool);
 
     /// @notice Checks if a proposal can be executed.
     /// @param _proposalId The ID of the proposal to be checked.
