@@ -263,7 +263,7 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        vm.expectRevert(PolygonMultisig.DelayAlreadyStarted.selector);
+        vm.expectRevert(PolygonMultisig.MetadataCantBeSet.selector);
         plugin.startProposalDelay(0, bytes("ipfs://failure"));
     }
 
@@ -271,8 +271,15 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         vm.warp(block.timestamp + 1 days + 1);
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.DelayAlreadyStarted.selector));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
         plugin.startProposalDelay(0, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_emergency_metadata_called() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
     }
 
     function test_reverts_if_not_enough_approvals() public {
@@ -307,10 +314,48 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
         assertEq(_executed, true);
     }
 
+    function test_emergency_can_set_metadata_before() public {
+        vm.startPrank(address(0xB0b));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        (,,,,,,, bytes memory _secondaryMetadata,) = plugin.getProposal(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://world"));
+    }
+
+    function test_emergency_can_set_metadata_after() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        (,,,,,,, bytes memory _secondaryMetadata,) = plugin.getProposal(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://world"));
+    }
+
     function test_reverts_if_not_enough_approvals_in_emergency() public {
         vm.startPrank(address(0xB0b));
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0));
         plugin.execute(0);
+    }
+
+    function test_reverts_if_emergency_metadata_after_execution() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.execute(0);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_emergency_metadata_already_set() public {
+        vm.startPrank(address(0xB0b));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_emergency_metadata_after_delay() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        vm.warp(block.timestamp + 3 days);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
     }
 }
 
