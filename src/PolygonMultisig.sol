@@ -158,7 +158,7 @@ contract PolygonMultisig is
     /// @notice Emitted when the plugin settings are set.
     /// @param onlyListed Whether only listed addresses can create a proposal.
     /// @param minApprovals The minimum amount of approvals needed to pass a proposal.
-    event MultisigSettingsUpdated(bool onlyListed, uint16 indexed minApprovals);
+    event MultisigSettingsUpdated(bool onlyListed, uint16 indexed minApprovals, uint16 emergencyMinApprovals, uint64 delayDuration);
 
     /// @notice Initializes Release 1, Build 2.
     /// @dev This method is required to support [ERC-1822](https://eips.ethereum.org/EIPS/eip-1822).
@@ -516,14 +516,14 @@ contract PolygonMultisig is
     function _updateMultisigSettings(MultisigSettings calldata _multisigSettings) internal {
         uint16 addresslistLength_ = uint16(addresslistLength());
 
-        if (_multisigSettings.minApprovals > addresslistLength_) {
+        if (_multisigSettings.minApprovals > addresslistLength_ || _multisigSettings.emergencyMinApprovals > addresslistLength_) {
             revert MinApprovalsOutOfBounds({
                 limit: addresslistLength_,
                 actual: _multisigSettings.minApprovals
             });
         }
 
-        if (_multisigSettings.minApprovals < 1) {
+        if (_multisigSettings.minApprovals < 1 || _multisigSettings.emergencyMinApprovals < 1) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
 
@@ -532,7 +532,9 @@ contract PolygonMultisig is
 
         emit MultisigSettingsUpdated({
             onlyListed: _multisigSettings.onlyListed,
-            minApprovals: _multisigSettings.minApprovals
+            minApprovals: _multisigSettings.minApprovals,
+            emergencyMinApprovals: _multisigSettings.emergencyMinApprovals,
+            delayDuration: _multisigSettings.delayDuration
         });
     }
 
