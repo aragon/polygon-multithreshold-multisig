@@ -346,7 +346,7 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
     function test_reverts_if_emergency_metadata_already_set() public {
         vm.startPrank(address(0xB0b));
         plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.SecondaryMetadataAlreadySet.selector));
         plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
     }
 
