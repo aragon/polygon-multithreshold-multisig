@@ -1,0 +1,1 @@
+genhtml lcov.info.pruned -o report --ignore-errors inconsistent --ignore-errors corrupt

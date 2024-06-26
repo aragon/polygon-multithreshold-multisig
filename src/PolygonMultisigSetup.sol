@@ -21,22 +21,28 @@ contract PolygonMultisigSetup is PluginSetup {
     }
 
     /// @inheritdoc IPluginSetup
-    function prepareInstallation(address _dao, bytes calldata _data)
-        external
-        returns (address plugin, PreparedSetupData memory preparedSetupData)
-    {
+    function prepareInstallation(
+        address _dao,
+        bytes calldata _data
+    ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
         // Decode `_data` to extract the params needed for deploying and initializing `Multisig` plugin.
-        (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) =
-            abi.decode(_data, (address[], PolygonMultisig.MultisigSettings));
+        (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) = abi
+            .decode(_data, (address[], PolygonMultisig.MultisigSettings));
 
         // Prepare and Deploy the plugin proxy.
         plugin = createERC1967Proxy(
             address(multisigBase),
-            abi.encodeWithSelector(PolygonMultisig.initialize.selector, _dao, members, multisigSettings)
+            abi.encodeWithSelector(
+                PolygonMultisig.initialize.selector,
+                _dao,
+                members,
+                multisigSettings
+            )
         );
 
         // Prepare permissions
-        PermissionLib.MultiTargetPermission[] memory permissions = new PermissionLib.MultiTargetPermission[](3);
+        PermissionLib.MultiTargetPermission[]
+            memory permissions = new PermissionLib.MultiTargetPermission[](3);
 
         // Set permissions to be granted.
         // Grant the list of permissions of the plugin to the DAO.
@@ -69,7 +75,11 @@ contract PolygonMultisigSetup is PluginSetup {
     }
 
     /// @inheritdoc IPluginSetup
-    function prepareUpdate(address _dao, uint16 _currentBuild, SetupPayload calldata _payload)
+    function prepareUpdate(
+        address _dao,
+        uint16 _currentBuild,
+        SetupPayload calldata _payload
+    )
         external
         pure
         override
@@ -77,11 +87,10 @@ contract PolygonMultisigSetup is PluginSetup {
     {}
 
     /// @inheritdoc IPluginSetup
-    function prepareUninstallation(address _dao, SetupPayload calldata _payload)
-        external
-        view
-        returns (PermissionLib.MultiTargetPermission[] memory permissions)
-    {
+    function prepareUninstallation(
+        address _dao,
+        SetupPayload calldata _payload
+    ) external view returns (PermissionLib.MultiTargetPermission[] memory permissions) {
         // Prepare permissions
         permissions = new PermissionLib.MultiTargetPermission[](3);
 

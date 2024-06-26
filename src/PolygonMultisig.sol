@@ -10,6 +10,7 @@ import {IMembership} from "@aragon/osx/core/plugin/membership/IMembership.sol";
 import {ProposalUpgradeable} from "@aragon/osx/core/plugin/proposal/ProposalUpgradeable.sol";
 import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
 import {IMultisig} from "./IMultisig.sol";
+import "forge-std/console.sol";
 
 /// @title PolygonMultisig - Release 1, Build 1
 /// @author Aragon Association - 2024
@@ -188,7 +189,7 @@ contract PolygonMultisig is
         uint64 delayDuration
     );
 
-    /// @notice Initializes Release 1, Build 2.
+    /// @notice Initializes Release 1, Build 1.
     /// @dev This method is required to support [ERC-1822](https://eips.ethereum.org/EIPS/eip-1822).
     /// @param _dao The IDAO interface of the associated DAO.
     /// @param _members The addresses of the initial members to be added.

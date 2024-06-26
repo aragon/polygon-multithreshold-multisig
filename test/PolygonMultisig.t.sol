@@ -62,11 +62,8 @@ abstract contract PolygonMultisigExtraMembersTest is AragonTest {
 }
 
 contract PolygonMultisigInitializeTest is PolygonMultisigTest {
-    function setUp() public override {
-        super.setUp();
-    }
-
     function test_initialize() public {
+        super.setUp();
         assertEq(address(plugin.dao()), address(dao));
         assertEq(plugin.isMember(address(0xB0b)), true);
         (
@@ -81,7 +78,20 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         assertEq(_delayDuration, multisigSettings.delayDuration);
     }
 
+    function test_members_list_is_too_big() public {
+        address[] memory _members = new address[](type(uint16).max);
+        for (uint256 i = 0; i < type(uint16).max; i++) {
+            _members[i] = address(uint160(i));
+        }
+        PolygonMultisigSetup _setup = new PolygonMultisigSetup();
+        bytes memory _setupData = abi.encode(_members, multisigSettings);
+        (DAO _dao, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
+        assertEq(PolygonMultisig(_plugin).isMember(address(uint160(1))), true);
+        assertEq(PolygonMultisig(_plugin).isMember(address(uint160(type(uint16).max - 1))), true);
+    }
+
     function test_reverts_if_reinitialized() public {
+        super.setUp();
         vm.expectRevert("Initializable: contract is already initialized");
         plugin.initialize(dao, members, multisigSettings);
     }
