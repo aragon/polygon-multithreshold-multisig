@@ -352,10 +352,7 @@ contract PolygonMultisig is
         }
     }
 
-    function approveWithReason(
-        uint256 _proposalId,
-        bytes calldata _reason
-    ) external {
+    function approveWithReason(uint256 _proposalId, bytes calldata _reason) external {
         address approver = _msgSender();
         approve(_proposalId);
         emit ApprovalReason(_proposalId, approver, _reason);
@@ -381,10 +378,7 @@ contract PolygonMultisig is
         emit Approved({proposalId: _proposalId, approver: approver});
     }
 
-    function confirmWithReason(
-        uint256 _proposalId,
-        bytes calldata _reason
-    ) external {
+    function confirmWithReason(uint256 _proposalId, bytes calldata _reason) external {
         address approver = _msgSender();
         confirm(_proposalId);
         emit ConfirmationReason(_proposalId, approver, _reason);
@@ -471,7 +465,9 @@ contract PolygonMultisig is
         return proposals[_proposalId].approvers[_account];
     }
 
-    function _checkProposalForMetadata(uint256 _proposalId) internal returns (Proposal storage) {
+    function _checkProposalForMetadata(
+        uint256 _proposalId
+    ) internal view returns (Proposal storage) {
         if (!isListed(_msgSender())) {
             revert NotInMemberList(_msgSender());
         }
