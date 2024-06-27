@@ -2,7 +2,11 @@
 pragma solidity 0.8.24;
 
 import {DAO} from "@aragon/osx/core/dao/DAO.sol";
-import {IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
+import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
+import {IMultisig} from "../src/IMultisig.sol";
+import {IMembership} from "@aragon/osx/core/plugin/membership/IMembership.sol";
+import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
+import {IPlugin} from "@aragon/osx/core/plugin/IPlugin.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {AragonTest} from "./base/AragonTest.sol";
@@ -78,7 +82,7 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         assertEq(_delayDuration, multisigSettings.delayDuration);
     }
 
-    function test_members_list_is_too_big() public {
+    function test_members_list_limit() public {
         address[] memory _members = new address[](type(uint16).max);
         for (uint256 i = 0; i < type(uint16).max; i++) {
             _members[i] = address(uint160(i));
@@ -88,6 +92,13 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         (DAO _dao, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
         assertEq(PolygonMultisig(_plugin).isMember(address(uint160(1))), true);
         assertEq(PolygonMultisig(_plugin).isMember(address(uint160(type(uint16).max - 1))), true);
+    }
+
+    function test_interfaces() public {
+        assertEq(plugin.supportsInterface(type(IMultisig).interfaceId), true);
+        assertEq(plugin.supportsInterface(type(Addresslist).interfaceId), true);
+        assertEq(plugin.supportsInterface(type(IMembership).interfaceId), true);
+        assertEq(plugin.supportsInterface(type(IPlugin).interfaceId), true);
     }
 
     function test_reverts_if_reinitialized() public {
@@ -110,7 +121,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
-            _allowFailureMap: 0,
+            _allowFailureMap: 1,
             _approveProposal: false,
             _startDate: uint64(0),
             _endDate: uint64(block.timestamp + 1 days),
@@ -625,6 +636,23 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         assertEq(_confirmations, uint16(1));
     }
 
+    function test_reverts_if_double_confirmation() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PolygonMultisig.ConfirmationCastForbidden.selector,
+                0,
+                address(0xB0b)
+            )
+        );
+        plugin.confirm(0);
+    }
+
     function test_reverts_confirmation_if_late_execution() public {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
@@ -864,5 +892,375 @@ contract PolygonMultisigGettersTest is PolygonMultisigTest {
         assertEq(_metadata, bytes("ipfs://hello"));
         assertEq(_secondaryMetadata, bytes(""));
         assertEq(_firstDelayStartBlock, 0);
+    }
+}
+
+contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
+    function setUp() public override {
+        super.setUp();
+    }
+
+    function test_add_multisig_members() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        address[] memory _addresses = new address[](1);
+        _addresses[0] = address(0xa11ce);
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.addAddresses, _addresses)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        plugin.execute(0);
+
+        assert(plugin.isMember(address(0xa11ce)));
+    }
+
+    function test_remove_multisig_members() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        address[] memory _addresses = new address[](1);
+        _addresses[0] = address(0xB0b);
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.removeAddresses, _addresses)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        plugin.execute(0);
+
+        assertEq(plugin.isMember(address(0xB0b)), false);
+    }
+
+    function test_reverts_if_removals_are_lower_than_min_approvals() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        address[] memory _addresses = new address[](2);
+        _addresses[0] = address(0xB0b);
+        _addresses[1] = address(0xdeaf);
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.removeAddresses, _addresses)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+
+    function test_reverts_if_adding_too_many_members() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        address[] memory _addresses = new address[](type(uint16).max);
+        for (uint256 i = 0; i < type(uint16).max; i++) {
+            _addresses[i] = address(uint160(i));
+        }
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.addAddresses, _addresses)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+}
+
+contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
+    function setUp() public override {
+        super.setUp();
+    }
+
+    function test_change_min_approvals() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 2,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 2
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        plugin.execute(0);
+        (
+            bool _onlyListed,
+            uint16 _minApprovals,
+            uint16 _emergencyMinApprovals,
+            uint64 _delayDuration
+        ) = plugin.multisigSettings();
+        assertEq(_onlyListed, true);
+        assertEq(_minApprovals, 2);
+        assertEq(_emergencyMinApprovals, 2);
+        assertEq(_delayDuration, 1 days);
+    }
+
+    function test_reverts_if_min_approvals_is_zero() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 0,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 1
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+
+    function test_reverts_if_emergency_min_approvals_is_zero() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 2,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 0
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+
+    function test_reverts_if_min_approvals_is_higher_than_members() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 3,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 1
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+
+    function test_reverts_if_emergency_min_approvals_is_higher_than_members() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 3
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
+    }
+
+    function test_reverts_if_emergency_min_approvals_is_smaller_than_min_approvals() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 2,
+            delayDuration: 1 days,
+            emergencyMinApprovals: 1
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(0);
+        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        (, , , uint64 _delay) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(0);
+        vm.expectRevert();
+        plugin.execute(0);
     }
 }

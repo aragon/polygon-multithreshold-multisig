@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.8.24;
 
-import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
-
-import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
-
 import {IMembership} from "@aragon/osx/core/plugin/membership/IMembership.sol";
+import {IMultisig} from "./IMultisig.sol";
 
+import {PluginUUPSUpgradeable, IDAO} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
+import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 import {ProposalUpgradeable} from "@aragon/osx/core/plugin/proposal/ProposalUpgradeable.sol";
 import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
-import {IMultisig} from "./IMultisig.sol";
-import "forge-std/console.sol";
 
 /// @title PolygonMultisig - Release 1, Build 1
 /// @author Aragon Association - 2024
@@ -378,7 +375,7 @@ contract PolygonMultisig is
             proposal_.confirmations += 1;
         }
 
-        proposal_.approvers[approver] = true;
+        proposal_.confirmation_approvers[approver] = true;
 
         emit Confirmed({proposalId: _proposalId, approver: approver});
     }
@@ -626,6 +623,13 @@ contract PolygonMultisig is
     /// @param _multisigSettings The new settings.
     function _updateMultisigSettings(MultisigSettings calldata _multisigSettings) internal {
         uint16 addresslistLength_ = uint16(addresslistLength());
+
+        if (_multisigSettings.minApprovals > _multisigSettings.emergencyMinApprovals) {
+            revert MinApprovalsOutOfBounds({
+                limit: _multisigSettings.emergencyMinApprovals,
+                actual: _multisigSettings.minApprovals
+            });
+        }
 
         if (
             _multisigSettings.minApprovals > addresslistLength_ ||
