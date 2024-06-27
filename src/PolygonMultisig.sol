@@ -164,20 +164,10 @@ contract PolygonMultisig is
     /// @param approver The approver casting the approve.
     event Approved(uint256 indexed proposalId, address indexed approver);
 
-    /// @notice Emitted when approved with a reason.
-    /// @param proposalId The ID of the proposal.
-    /// @param reason The reason for the approval.
-    event ApprovalReason(uint256 indexed proposalId, address indexed approver, bytes reason);
-
     /// @notice Emitted when a proposal is confirmed by an approver.
     /// @param proposalId The ID of the proposal.
     /// @param approver The approver casting the approve.
     event Confirmed(uint256 indexed proposalId, address indexed approver);
-
-    /// @notice Emitted when confirmed with a reason.
-    /// @param proposalId The ID of the proposal.
-    /// @param approver The approver casting the confirmation.
-    event ConfirmationReason(uint256 indexed proposalId, address indexed approver, bytes reason);
 
     /// @notice Emitted when the plugin settings are set.
     /// @param onlyListed Whether only listed addresses can create a proposal.
@@ -353,12 +343,6 @@ contract PolygonMultisig is
         }
     }
 
-    function approveWithReason(uint256 _proposalId, bytes calldata _reason) external {
-        address approver = _msgSender();
-        approve(_proposalId);
-        emit ApprovalReason(_proposalId, approver, _reason);
-    }
-
     /// @inheritdoc IMultisig
     function approve(uint256 _proposalId) public {
         address approver = _msgSender();
@@ -377,12 +361,6 @@ contract PolygonMultisig is
         proposal_.approvers[approver] = true;
 
         emit Approved({proposalId: _proposalId, approver: approver});
-    }
-
-    function confirmWithReason(uint256 _proposalId, bytes calldata _reason) external {
-        address approver = _msgSender();
-        confirm(_proposalId);
-        emit ConfirmationReason(_proposalId, approver, _reason);
     }
 
     /// @inheritdoc IMultisig
