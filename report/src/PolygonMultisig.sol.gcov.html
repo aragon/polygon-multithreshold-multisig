@@ -31,18 +31,18 @@
             <td class="headerValue">lcov.info.pruned</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryHi">96.7&nbsp;%</td>
+            <td class="headerCovTableEntryHi">99.3&nbsp;%</td>
             <td class="headerCovTableEntry">152</td>
-            <td class="headerCovTableEntry">147</td>
+            <td class="headerCovTableEntry">151</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2024-06-27 18:59:33</td>
+            <td class="headerValue">2024-06-28 15:20:10</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntryHi">92.0&nbsp;%</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
             <td class="headerCovTableEntry">25</td>
-            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntry">25</td>
           </tr>
                   <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
                 </table>
@@ -248,16 +248,16 @@
 <span id="L186"><span class="lineNum">     186</span>              :         address[] calldata _members,</span>
 <span id="L187"><span class="lineNum">     187</span>              :         MultisigSettings calldata _multisigSettings</span>
 <span id="L188"><span class="lineNum">     188</span>              :     ) external initializer {</span>
-<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC tlaBgGNC">         126 :         __PluginUUPSUpgradeable_init(_dao);</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC tlaBgGNC">         130 :         __PluginUUPSUpgradeable_init(_dao);</span></span>
 <span id="L190"><span class="lineNum">     190</span>              : </span>
-<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">         126 :         if (_members.length &gt; type(uint16).max) {</span></span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">         130 :         if (_members.length &gt; type(uint16).max) {</span></span>
 <span id="L192"><span class="lineNum">     192</span> <span class="tlaUNC tlaBgUNC">           0 :             revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: _members.length});</span></span>
 <span id="L193"><span class="lineNum">     193</span>              :         }</span>
 <span id="L194"><span class="lineNum">     194</span>              : </span>
-<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC tlaBgGNC">         126 :         _addAddresses(_members);</span></span>
-<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">         126 :         emit MembersAdded({members: _members});</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC tlaBgGNC">         130 :         _addAddresses(_members);</span></span>
+<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">         130 :         emit MembersAdded({members: _members});</span></span>
 <span id="L197"><span class="lineNum">     197</span>              : </span>
-<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">         126 :         _updateMultisigSettings(_multisigSettings);</span></span>
+<span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">         130 :         _updateMultisigSettings(_multisigSettings);</span></span>
 <span id="L199"><span class="lineNum">     199</span>              :     }</span>
 <span id="L200"><span class="lineNum">     200</span>              : </span>
 <span id="L201"><span class="lineNum">     201</span>              :     /// @notice Checks if this or the parent contract supports an interface by its ID.</span>
@@ -317,7 +317,7 @@
 <span id="L255"><span class="lineNum">     255</span>              :     function updateMultisigSettings(</span>
 <span id="L256"><span class="lineNum">     256</span>              :         MultisigSettings calldata _multisigSettings</span>
 <span id="L257"><span class="lineNum">     257</span>              :     ) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {</span>
-<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">          12 :         _updateMultisigSettings(_multisigSettings);</span></span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">          14 :         _updateMultisigSettings(_multisigSettings);</span></span>
 <span id="L259"><span class="lineNum">     259</span>              :     }</span>
 <span id="L260"><span class="lineNum">     260</span>              : </span>
 <span id="L261"><span class="lineNum">     261</span>              :     /// @notice Creates a new multisig proposal.</span>
@@ -338,32 +338,32 @@
 <span id="L276"><span class="lineNum">     276</span>              :         uint64 _endDate,</span>
 <span id="L277"><span class="lineNum">     277</span>              :         bool _emergency</span>
 <span id="L278"><span class="lineNum">     278</span>              :     ) external returns (uint256 proposalId) {</span>
-<span id="L279"><span class="lineNum">     279</span> <span class="tlaGNC">         177 :         if (multisigSettings.onlyListed &amp;&amp; !isListed(_msgSender())) {</span></span>
+<span id="L279"><span class="lineNum">     279</span> <span class="tlaGNC">         189 :         if (multisigSettings.onlyListed &amp;&amp; !isListed(_msgSender())) {</span></span>
 <span id="L280"><span class="lineNum">     280</span> <span class="tlaGNC">           2 :             revert ProposalCreationForbidden(_msgSender());</span></span>
 <span id="L281"><span class="lineNum">     281</span>              :         }</span>
 <span id="L282"><span class="lineNum">     282</span>              : </span>
-<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">         116 :         uint64 snapshotBlock;</span></span>
+<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">         124 :         uint64 snapshotBlock;</span></span>
 <span id="L284"><span class="lineNum">     284</span>              :         unchecked {</span>
-<span id="L285"><span class="lineNum">     285</span> <span class="tlaGNC">         116 :             snapshotBlock = block.number.toUint64() - 1; // The snapshot block must be mined already to protect the transaction against backrunning transactions causing census changes.</span></span>
+<span id="L285"><span class="lineNum">     285</span> <span class="tlaGNC">         124 :             snapshotBlock = block.number.toUint64() - 1; // The snapshot block must be mined already to protect the transaction against backrunning transactions causing census changes.</span></span>
 <span id="L286"><span class="lineNum">     286</span>              :         }</span>
 <span id="L287"><span class="lineNum">     287</span>              : </span>
 <span id="L288"><span class="lineNum">     288</span>              :         // Revert if the settings have been changed in the same block as this proposal should be created in.</span>
 <span id="L289"><span class="lineNum">     289</span>              :         // This prevents a malicious party from voting with previous addresses and the new settings.</span>
-<span id="L290"><span class="lineNum">     290</span> <span class="tlaGNC">         116 :         if (lastMultisigSettingsChange &gt; snapshotBlock) {</span></span>
-<span id="L291"><span class="lineNum">     291</span> <span class="tlaUNC tlaBgUNC">           0 :             revert ProposalCreationForbidden(_msgSender());</span></span>
+<span id="L290"><span class="lineNum">     290</span> <span class="tlaGNC">         124 :         if (lastMultisigSettingsChange &gt; snapshotBlock) {</span></span>
+<span id="L291"><span class="lineNum">     291</span> <span class="tlaGNC">           2 :             revert ProposalCreationForbidden(_msgSender());</span></span>
 <span id="L292"><span class="lineNum">     292</span>              :         }</span>
 <span id="L293"><span class="lineNum">     293</span>              : </span>
-<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC tlaBgGNC">         116 :         if (_startDate == 0) {</span></span>
-<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">         108 :             _startDate = block.timestamp.toUint64();</span></span>
+<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC">         122 :         if (_startDate == 0) {</span></span>
+<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">         114 :             _startDate = block.timestamp.toUint64();</span></span>
 <span id="L296"><span class="lineNum">     296</span> <span class="tlaGNC">          12 :         } else if (_startDate &lt; block.timestamp.toUint64()) {</span></span>
 <span id="L297"><span class="lineNum">     297</span> <span class="tlaGNC">           4 :             revert DateOutOfBounds({limit: block.timestamp.toUint64(), actual: _startDate});</span></span>
 <span id="L298"><span class="lineNum">     298</span>              :         }</span>
 <span id="L299"><span class="lineNum">     299</span>              : </span>
-<span id="L300"><span class="lineNum">     300</span> <span class="tlaGNC">         112 :         if (_endDate &lt; _startDate) {</span></span>
+<span id="L300"><span class="lineNum">     300</span> <span class="tlaGNC">         118 :         if (_endDate &lt; _startDate) {</span></span>
 <span id="L301"><span class="lineNum">     301</span> <span class="tlaGNC">           4 :             revert DateOutOfBounds({limit: _startDate, actual: _endDate});</span></span>
 <span id="L302"><span class="lineNum">     302</span>              :         }</span>
 <span id="L303"><span class="lineNum">     303</span>              : </span>
-<span id="L304"><span class="lineNum">     304</span> <span class="tlaGNC">         108 :         proposalId = _createProposal({</span></span>
+<span id="L304"><span class="lineNum">     304</span> <span class="tlaGNC">         114 :         proposalId = _createProposal({</span></span>
 <span id="L305"><span class="lineNum">     305</span>              :             _creator: _msgSender(),</span>
 <span id="L306"><span class="lineNum">     306</span>              :             _metadata: _metadata,</span>
 <span id="L307"><span class="lineNum">     307</span>              :             _startDate: _startDate,</span>
@@ -373,88 +373,88 @@
 <span id="L311"><span class="lineNum">     311</span>              :         });</span>
 <span id="L312"><span class="lineNum">     312</span>              : </span>
 <span id="L313"><span class="lineNum">     313</span>              :         // Create the proposal</span>
-<span id="L314"><span class="lineNum">     314</span> <span class="tlaGNC">         108 :         Proposal storage proposal_ = proposals[proposalId];</span></span>
-<span id="L315"><span class="lineNum">     315</span> <span class="tlaGNC">         108 :         proposal_.metadata = _metadata;</span></span>
+<span id="L314"><span class="lineNum">     314</span> <span class="tlaGNC">         114 :         Proposal storage proposal_ = proposals[proposalId];</span></span>
+<span id="L315"><span class="lineNum">     315</span> <span class="tlaGNC">         114 :         proposal_.metadata = _metadata;</span></span>
 <span id="L316"><span class="lineNum">     316</span>              : </span>
-<span id="L317"><span class="lineNum">     317</span> <span class="tlaGNC">         108 :         proposal_.parameters.snapshotBlock = snapshotBlock;</span></span>
-<span id="L318"><span class="lineNum">     318</span> <span class="tlaGNC">         108 :         proposal_.parameters.startDate = _startDate;</span></span>
-<span id="L319"><span class="lineNum">     319</span> <span class="tlaGNC">         108 :         proposal_.parameters.endDate = _endDate;</span></span>
-<span id="L320"><span class="lineNum">     320</span> <span class="tlaGNC">         108 :         proposal_.parameters.minApprovals = multisigSettings.minApprovals;</span></span>
+<span id="L317"><span class="lineNum">     317</span> <span class="tlaGNC">         114 :         proposal_.parameters.snapshotBlock = snapshotBlock;</span></span>
+<span id="L318"><span class="lineNum">     318</span> <span class="tlaGNC">         114 :         proposal_.parameters.startDate = _startDate;</span></span>
+<span id="L319"><span class="lineNum">     319</span> <span class="tlaGNC">         114 :         proposal_.parameters.endDate = _endDate;</span></span>
+<span id="L320"><span class="lineNum">     320</span> <span class="tlaGNC">         114 :         proposal_.parameters.minApprovals = multisigSettings.minApprovals;</span></span>
 <span id="L321"><span class="lineNum">     321</span>              :         // setting the new data</span>
-<span id="L322"><span class="lineNum">     322</span> <span class="tlaGNC">         108 :         proposal_.parameters.emergency = _emergency;</span></span>
-<span id="L323"><span class="lineNum">     323</span> <span class="tlaGNC">         108 :         proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;</span></span>
-<span id="L324"><span class="lineNum">     324</span> <span class="tlaGNC">         108 :         proposal_.parameters.delayDuration = multisigSettings.delayDuration;</span></span>
+<span id="L322"><span class="lineNum">     322</span> <span class="tlaGNC">         114 :         proposal_.parameters.emergency = _emergency;</span></span>
+<span id="L323"><span class="lineNum">     323</span> <span class="tlaGNC">         114 :         proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;</span></span>
+<span id="L324"><span class="lineNum">     324</span> <span class="tlaGNC">         114 :         proposal_.parameters.delayDuration = multisigSettings.delayDuration;</span></span>
 <span id="L325"><span class="lineNum">     325</span>              : </span>
 <span id="L326"><span class="lineNum">     326</span>              :         // Reduce costs</span>
-<span id="L327"><span class="lineNum">     327</span> <span class="tlaGNC">         108 :         if (_allowFailureMap != 0) {</span></span>
+<span id="L327"><span class="lineNum">     327</span> <span class="tlaGNC">         114 :         if (_allowFailureMap != 0) {</span></span>
 <span id="L328"><span class="lineNum">     328</span> <span class="tlaGNC">           2 :             proposal_.allowFailureMap = _allowFailureMap;</span></span>
 <span id="L329"><span class="lineNum">     329</span>              :         }</span>
 <span id="L330"><span class="lineNum">     330</span>              : </span>
-<span id="L331"><span class="lineNum">     331</span> <span class="tlaGNC">         182 :         for (uint256 i; i &lt; _actions.length; ) {</span></span>
-<span id="L332"><span class="lineNum">     332</span> <span class="tlaGNC">          40 :             proposal_.actions.push(_actions[i]);</span></span>
+<span id="L331"><span class="lineNum">     331</span> <span class="tlaGNC">         193 :         for (uint256 i; i &lt; _actions.length; ) {</span></span>
+<span id="L332"><span class="lineNum">     332</span> <span class="tlaGNC">          44 :             proposal_.actions.push(_actions[i]);</span></span>
 <span id="L333"><span class="lineNum">     333</span>              :             unchecked {</span>
-<span id="L334"><span class="lineNum">     334</span> <span class="tlaGNC">          40 :                 ++i;</span></span>
+<span id="L334"><span class="lineNum">     334</span> <span class="tlaGNC">          44 :                 ++i;</span></span>
 <span id="L335"><span class="lineNum">     335</span>              :             }</span>
 <span id="L336"><span class="lineNum">     336</span>              :         }</span>
 <span id="L337"><span class="lineNum">     337</span>              : </span>
-<span id="L338"><span class="lineNum">     338</span> <span class="tlaGNC">          54 :         if (_approveProposal) {</span></span>
+<span id="L338"><span class="lineNum">     338</span> <span class="tlaGNC">          57 :         if (_approveProposal) {</span></span>
 <span id="L339"><span class="lineNum">     339</span> <span class="tlaGNC">           2 :             approve(proposalId);</span></span>
 <span id="L340"><span class="lineNum">     340</span>              :         }</span>
 <span id="L341"><span class="lineNum">     341</span>              :     }</span>
 <span id="L342"><span class="lineNum">     342</span>              : </span>
 <span id="L343"><span class="lineNum">     343</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L344"><span class="lineNum">     344</span>              :     function approve(uint256 _proposalId) public {</span>
-<span id="L345"><span class="lineNum">     345</span> <span class="tlaGNC">         147 :         address approver = _msgSender();</span></span>
-<span id="L346"><span class="lineNum">     346</span> <span class="tlaGNC">          98 :         if (!_canApprove(_proposalId, approver)) {</span></span>
+<span id="L345"><span class="lineNum">     345</span> <span class="tlaGNC">         153 :         address approver = _msgSender();</span></span>
+<span id="L346"><span class="lineNum">     346</span> <span class="tlaGNC">         102 :         if (!_canApprove(_proposalId, approver)) {</span></span>
 <span id="L347"><span class="lineNum">     347</span> <span class="tlaGNC">          12 :             revert ApprovalCastForbidden(_proposalId, approver);</span></span>
 <span id="L348"><span class="lineNum">     348</span>              :         }</span>
 <span id="L349"><span class="lineNum">     349</span>              : </span>
-<span id="L350"><span class="lineNum">     350</span> <span class="tlaGNC">          86 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L350"><span class="lineNum">     350</span> <span class="tlaGNC">          90 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L351"><span class="lineNum">     351</span>              : </span>
 <span id="L352"><span class="lineNum">     352</span>              :         // As the list can never become more than type(uint16).max(due to addAddresses check)</span>
 <span id="L353"><span class="lineNum">     353</span>              :         // It's safe to use unchecked as it would never overflow.</span>
 <span id="L354"><span class="lineNum">     354</span>              :         unchecked {</span>
-<span id="L355"><span class="lineNum">     355</span> <span class="tlaGNC">          86 :             proposal_.approvals += 1;</span></span>
+<span id="L355"><span class="lineNum">     355</span> <span class="tlaGNC">          90 :             proposal_.approvals += 1;</span></span>
 <span id="L356"><span class="lineNum">     356</span>              :         }</span>
 <span id="L357"><span class="lineNum">     357</span>              : </span>
-<span id="L358"><span class="lineNum">     358</span> <span class="tlaGNC">          86 :         proposal_.approvers[approver] = true;</span></span>
+<span id="L358"><span class="lineNum">     358</span> <span class="tlaGNC">          90 :         proposal_.approvers[approver] = true;</span></span>
 <span id="L359"><span class="lineNum">     359</span>              : </span>
-<span id="L360"><span class="lineNum">     360</span> <span class="tlaGNC">          86 :         emit Approved({proposalId: _proposalId, approver: approver});</span></span>
+<span id="L360"><span class="lineNum">     360</span> <span class="tlaGNC">          90 :         emit Approved({proposalId: _proposalId, approver: approver});</span></span>
 <span id="L361"><span class="lineNum">     361</span>              :     }</span>
 <span id="L362"><span class="lineNum">     362</span>              : </span>
 <span id="L363"><span class="lineNum">     363</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L364"><span class="lineNum">     364</span>              :     function confirm(uint256 _proposalId) public {</span>
-<span id="L365"><span class="lineNum">     365</span> <span class="tlaGNC">          69 :         address approver = _msgSender();</span></span>
-<span id="L366"><span class="lineNum">     366</span> <span class="tlaGNC">          46 :         if (!_canConfirm(_proposalId, approver)) {</span></span>
+<span id="L365"><span class="lineNum">     365</span> <span class="tlaGNC">          72 :         address approver = _msgSender();</span></span>
+<span id="L366"><span class="lineNum">     366</span> <span class="tlaGNC">          48 :         if (!_canConfirm(_proposalId, approver)) {</span></span>
 <span id="L367"><span class="lineNum">     367</span> <span class="tlaGNC">          16 :             revert ConfirmationCastForbidden(_proposalId, approver);</span></span>
 <span id="L368"><span class="lineNum">     368</span>              :         }</span>
 <span id="L369"><span class="lineNum">     369</span>              : </span>
-<span id="L370"><span class="lineNum">     370</span> <span class="tlaGNC">          30 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L370"><span class="lineNum">     370</span> <span class="tlaGNC">          32 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L371"><span class="lineNum">     371</span>              : </span>
 <span id="L372"><span class="lineNum">     372</span>              :         // As the list can never become more than type(uint16).max(due to addAddresses check)</span>
 <span id="L373"><span class="lineNum">     373</span>              :         // It's safe to use unchecked as it would never overflow.</span>
 <span id="L374"><span class="lineNum">     374</span>              :         unchecked {</span>
-<span id="L375"><span class="lineNum">     375</span> <span class="tlaGNC">          30 :             proposal_.confirmations += 1;</span></span>
+<span id="L375"><span class="lineNum">     375</span> <span class="tlaGNC">          32 :             proposal_.confirmations += 1;</span></span>
 <span id="L376"><span class="lineNum">     376</span>              :         }</span>
 <span id="L377"><span class="lineNum">     377</span>              : </span>
-<span id="L378"><span class="lineNum">     378</span> <span class="tlaGNC">          30 :         proposal_.confirmation_approvers[approver] = true;</span></span>
+<span id="L378"><span class="lineNum">     378</span> <span class="tlaGNC">          32 :         proposal_.confirmation_approvers[approver] = true;</span></span>
 <span id="L379"><span class="lineNum">     379</span>              : </span>
-<span id="L380"><span class="lineNum">     380</span> <span class="tlaGNC">          30 :         emit Confirmed({proposalId: _proposalId, approver: approver});</span></span>
+<span id="L380"><span class="lineNum">     380</span> <span class="tlaGNC">          32 :         emit Confirmed({proposalId: _proposalId, approver: approver});</span></span>
 <span id="L381"><span class="lineNum">     381</span>              :     }</span>
 <span id="L382"><span class="lineNum">     382</span>              : </span>
 <span id="L383"><span class="lineNum">     383</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L384"><span class="lineNum">     384</span>              :     function canApprove(uint256 _proposalId, address _account) external view returns (bool) {</span>
-<span id="L385"><span class="lineNum">     385</span> <span class="tlaUNC tlaBgUNC">           0 :         return _canApprove(_proposalId, _account);</span></span>
+<span id="L385"><span class="lineNum">     385</span> <span class="tlaGNC">           3 :         return _canApprove(_proposalId, _account);</span></span>
 <span id="L386"><span class="lineNum">     386</span>              :     }</span>
 <span id="L387"><span class="lineNum">     387</span>              : </span>
 <span id="L388"><span class="lineNum">     388</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L389"><span class="lineNum">     389</span>              :     function canConfirm(uint256 _proposalId, address _account) external view returns (bool) {</span>
-<span id="L390"><span class="lineNum">     390</span> <span class="tlaGNC tlaBgGNC">          27 :         return _canConfirm(_proposalId, _account);</span></span>
+<span id="L390"><span class="lineNum">     390</span> <span class="tlaGNC">          27 :         return _canConfirm(_proposalId, _account);</span></span>
 <span id="L391"><span class="lineNum">     391</span>              :     }</span>
 <span id="L392"><span class="lineNum">     392</span>              : </span>
 <span id="L393"><span class="lineNum">     393</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L394"><span class="lineNum">     394</span>              :     function canExecute(uint256 _proposalId) external view returns (bool) {</span>
-<span id="L395"><span class="lineNum">     395</span> <span class="tlaUNC tlaBgUNC">           0 :         return _canExecute(_proposalId);</span></span>
+<span id="L395"><span class="lineNum">     395</span> <span class="tlaGNC">           3 :         return _canExecute(_proposalId);</span></span>
 <span id="L396"><span class="lineNum">     396</span>              :     }</span>
 <span id="L397"><span class="lineNum">     397</span>              : </span>
 <span id="L398"><span class="lineNum">     398</span>              :     /// @notice Returns all information for a proposal vote by its ID.</span>
@@ -485,7 +485,7 @@
 <span id="L423"><span class="lineNum">     423</span>              :             uint64 firstDelayStartTimestamp</span>
 <span id="L424"><span class="lineNum">     424</span>              :         )</span>
 <span id="L425"><span class="lineNum">     425</span>              :     {</span>
-<span id="L426"><span class="lineNum">     426</span> <span class="tlaGNC tlaBgGNC">          26 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L426"><span class="lineNum">     426</span> <span class="tlaGNC">          26 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L427"><span class="lineNum">     427</span>              : </span>
 <span id="L428"><span class="lineNum">     428</span> <span class="tlaGNC">          26 :         executed = proposal_.executed;</span></span>
 <span id="L429"><span class="lineNum">     429</span> <span class="tlaGNC">          26 :         approvals = proposal_.approvals;</span></span>
@@ -506,41 +506,41 @@
 <span id="L444"><span class="lineNum">     444</span>              :     function _checkProposalForMetadata(</span>
 <span id="L445"><span class="lineNum">     445</span>              :         uint256 _proposalId</span>
 <span id="L446"><span class="lineNum">     446</span>              :     ) internal view returns (Proposal storage) {</span>
-<span id="L447"><span class="lineNum">     447</span> <span class="tlaGNC">          70 :         if (!isListed(_msgSender())) {</span></span>
+<span id="L447"><span class="lineNum">     447</span> <span class="tlaGNC">          74 :         if (!isListed(_msgSender())) {</span></span>
 <span id="L448"><span class="lineNum">     448</span> <span class="tlaGNC">           2 :             revert NotInMemberList(_msgSender());</span></span>
 <span id="L449"><span class="lineNum">     449</span>              :         }</span>
 <span id="L450"><span class="lineNum">     450</span>              : </span>
-<span id="L451"><span class="lineNum">     451</span> <span class="tlaGNC">          68 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
-<span id="L452"><span class="lineNum">     452</span> <span class="tlaGNC">         102 :         uint64 currentTimestamp64 = block.timestamp.toUint64();</span></span>
+<span id="L451"><span class="lineNum">     451</span> <span class="tlaGNC">          72 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L452"><span class="lineNum">     452</span> <span class="tlaGNC">         108 :         uint64 currentTimestamp64 = block.timestamp.toUint64();</span></span>
 <span id="L453"><span class="lineNum">     453</span>              : </span>
 <span id="L454"><span class="lineNum">     454</span>              :         if (</span>
-<span id="L455"><span class="lineNum">     455</span> <span class="tlaGNC">         102 :             proposal_.firstDelayStartTimestamp != 0 ||</span></span>
-<span id="L456"><span class="lineNum">     456</span> <span class="tlaGNC">          99 :             uint64(proposal_.parameters.endDate) &lt; currentTimestamp64</span></span>
+<span id="L455"><span class="lineNum">     455</span> <span class="tlaGNC">         108 :             proposal_.firstDelayStartTimestamp != 0 ||</span></span>
+<span id="L456"><span class="lineNum">     456</span> <span class="tlaGNC">         105 :             uint64(proposal_.parameters.endDate) &lt; currentTimestamp64</span></span>
 <span id="L457"><span class="lineNum">     457</span>              :         ) {</span>
 <span id="L458"><span class="lineNum">     458</span> <span class="tlaGNC">           6 :             revert MetadataCantBeSet();</span></span>
 <span id="L459"><span class="lineNum">     459</span>              :         }</span>
 <span id="L460"><span class="lineNum">     460</span>              : </span>
-<span id="L461"><span class="lineNum">     461</span> <span class="tlaGNC">          62 :         return proposal_;</span></span>
+<span id="L461"><span class="lineNum">     461</span> <span class="tlaGNC">          66 :         return proposal_;</span></span>
 <span id="L462"><span class="lineNum">     462</span>              :     }</span>
 <span id="L463"><span class="lineNum">     463</span>              : </span>
 <span id="L464"><span class="lineNum">     464</span>              :     /// @notice Allows to start the delay for a proposal.</span>
 <span id="L465"><span class="lineNum">     465</span>              :     /// @param _proposalId The ID of the proposal.</span>
 <span id="L466"><span class="lineNum">     466</span>              :     /// @param _secondaryMetadata The secondary metadata of the proposal.</span>
 <span id="L467"><span class="lineNum">     467</span>              :     function startProposalDelay(uint256 _proposalId, bytes calldata _secondaryMetadata) external {</span>
-<span id="L468"><span class="lineNum">     468</span> <span class="tlaGNC">          84 :         Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);</span></span>
+<span id="L468"><span class="lineNum">     468</span> <span class="tlaGNC">          90 :         Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);</span></span>
 <span id="L469"><span class="lineNum">     469</span>              : </span>
-<span id="L470"><span class="lineNum">     470</span> <span class="tlaGNC">          25 :         if (proposal_.parameters.emergency) {</span></span>
-<span id="L471"><span class="lineNum">     471</span> <span class="tlaUNC tlaBgUNC">           0 :             revert EmergencyProposalCantBeDelayed();</span></span>
+<span id="L470"><span class="lineNum">     470</span> <span class="tlaGNC">          27 :         if (proposal_.parameters.emergency) {</span></span>
+<span id="L471"><span class="lineNum">     471</span> <span class="tlaGNC">           2 :             revert EmergencyProposalCantBeDelayed();</span></span>
 <span id="L472"><span class="lineNum">     472</span>              :         }</span>
 <span id="L473"><span class="lineNum">     473</span>              : </span>
-<span id="L474"><span class="lineNum">     474</span> <span class="tlaGNC tlaBgGNC">          50 :         if (proposal_.approvals &lt; proposal_.parameters.minApprovals) {</span></span>
+<span id="L474"><span class="lineNum">     474</span> <span class="tlaGNC">          52 :         if (proposal_.approvals &lt; proposal_.parameters.minApprovals) {</span></span>
 <span id="L475"><span class="lineNum">     475</span> <span class="tlaGNC">           2 :             revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);</span></span>
 <span id="L476"><span class="lineNum">     476</span>              :         }</span>
 <span id="L477"><span class="lineNum">     477</span>              : </span>
-<span id="L478"><span class="lineNum">     478</span> <span class="tlaGNC">          48 :         _setSecondaryMetadata(proposal_, _secondaryMetadata);</span></span>
+<span id="L478"><span class="lineNum">     478</span> <span class="tlaGNC">          50 :         _setSecondaryMetadata(proposal_, _secondaryMetadata);</span></span>
 <span id="L479"><span class="lineNum">     479</span>              : </span>
-<span id="L480"><span class="lineNum">     480</span> <span class="tlaGNC">          48 :         proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();</span></span>
-<span id="L481"><span class="lineNum">     481</span> <span class="tlaGNC">          48 :         emit ProposalDelayStarted(_proposalId, _secondaryMetadata);</span></span>
+<span id="L480"><span class="lineNum">     480</span> <span class="tlaGNC">          50 :         proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();</span></span>
+<span id="L481"><span class="lineNum">     481</span> <span class="tlaGNC">          50 :         emit ProposalDelayStarted(_proposalId, _secondaryMetadata);</span></span>
 <span id="L482"><span class="lineNum">     482</span>              :     }</span>
 <span id="L483"><span class="lineNum">     483</span>              : </span>
 <span id="L484"><span class="lineNum">     484</span>              :     /// @notice Allows to set the secondary metadata of an emergency proposal at any point in time.</span>
@@ -561,11 +561,11 @@
 <span id="L499"><span class="lineNum">     499</span>              : </span>
 <span id="L500"><span class="lineNum">     500</span>              :     /// @inheritdoc IMultisig</span>
 <span id="L501"><span class="lineNum">     501</span>              :     function execute(uint256 _proposalId) public {</span>
-<span id="L502"><span class="lineNum">     502</span> <span class="tlaGNC">          48 :         if (!_canExecute(_proposalId)) {</span></span>
+<span id="L502"><span class="lineNum">     502</span> <span class="tlaGNC">          50 :         if (!_canExecute(_proposalId)) {</span></span>
 <span id="L503"><span class="lineNum">     503</span> <span class="tlaGNC">          14 :             revert ProposalExecutionForbidden(_proposalId);</span></span>
 <span id="L504"><span class="lineNum">     504</span>              :         }</span>
 <span id="L505"><span class="lineNum">     505</span>              : </span>
-<span id="L506"><span class="lineNum">     506</span> <span class="tlaGNC">          34 :         _execute(_proposalId);</span></span>
+<span id="L506"><span class="lineNum">     506</span> <span class="tlaGNC">          36 :         _execute(_proposalId);</span></span>
 <span id="L507"><span class="lineNum">     507</span>              :     }</span>
 <span id="L508"><span class="lineNum">     508</span>              : </span>
 <span id="L509"><span class="lineNum">     509</span>              :     /// @inheritdoc IMembership</span>
@@ -576,11 +576,11 @@
 <span id="L514"><span class="lineNum">     514</span>              :     /// @notice Internal function to execute a vote. It assumes the queried proposal exists.</span>
 <span id="L515"><span class="lineNum">     515</span>              :     /// @param _proposalId The ID of the proposal.</span>
 <span id="L516"><span class="lineNum">     516</span>              :     function _execute(uint256 _proposalId) internal {</span>
-<span id="L517"><span class="lineNum">     517</span> <span class="tlaGNC">          34 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L517"><span class="lineNum">     517</span> <span class="tlaGNC">          36 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L518"><span class="lineNum">     518</span>              : </span>
-<span id="L519"><span class="lineNum">     519</span> <span class="tlaGNC">          34 :         proposal_.executed = true;</span></span>
+<span id="L519"><span class="lineNum">     519</span> <span class="tlaGNC">          36 :         proposal_.executed = true;</span></span>
 <span id="L520"><span class="lineNum">     520</span>              : </span>
-<span id="L521"><span class="lineNum">     521</span> <span class="tlaGNC">          34 :         _executeProposal(</span></span>
+<span id="L521"><span class="lineNum">     521</span> <span class="tlaGNC">          36 :         _executeProposal(</span></span>
 <span id="L522"><span class="lineNum">     522</span>              :             dao(),</span>
 <span id="L523"><span class="lineNum">     523</span>              :             _proposalId,</span>
 <span id="L524"><span class="lineNum">     524</span>              :             proposals[_proposalId].actions,</span>
@@ -593,29 +593,29 @@
 <span id="L531"><span class="lineNum">     531</span>              :     /// @param _account The account to check.</span>
 <span id="L532"><span class="lineNum">     532</span>              :     /// @return Returns `true` if the given account can approve on a certain proposal and `false` otherwise.</span>
 <span id="L533"><span class="lineNum">     533</span>              :     function _canApprove(uint256 _proposalId, address _account) internal view returns (bool) {</span>
-<span id="L534"><span class="lineNum">     534</span> <span class="tlaGNC">          98 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L534"><span class="lineNum">     534</span> <span class="tlaGNC">         104 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L535"><span class="lineNum">     535</span>              : </span>
-<span id="L536"><span class="lineNum">     536</span> <span class="tlaGNC">          98 :         if (!_isProposalOpen(proposal_)) {</span></span>
+<span id="L536"><span class="lineNum">     536</span> <span class="tlaGNC">         104 :         if (!_isProposalOpen(proposal_)) {</span></span>
 <span id="L537"><span class="lineNum">     537</span>              :             // The proposal was executed already</span>
 <span id="L538"><span class="lineNum">     538</span> <span class="tlaGNC">           6 :             return false;</span></span>
 <span id="L539"><span class="lineNum">     539</span>              :         }</span>
 <span id="L540"><span class="lineNum">     540</span>              : </span>
-<span id="L541"><span class="lineNum">     541</span> <span class="tlaGNC">          92 :         if (proposal_.firstDelayStartTimestamp != 0) {</span></span>
+<span id="L541"><span class="lineNum">     541</span> <span class="tlaGNC">          98 :         if (proposal_.firstDelayStartTimestamp != 0) {</span></span>
 <span id="L542"><span class="lineNum">     542</span>              :             // The delay has already started</span>
 <span id="L543"><span class="lineNum">     543</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L544"><span class="lineNum">     544</span>              :         }</span>
 <span id="L545"><span class="lineNum">     545</span>              : </span>
-<span id="L546"><span class="lineNum">     546</span> <span class="tlaGNC">          90 :         if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {</span></span>
+<span id="L546"><span class="lineNum">     546</span> <span class="tlaGNC">          96 :         if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {</span></span>
 <span id="L547"><span class="lineNum">     547</span>              :             // The approver has no voting power.</span>
 <span id="L548"><span class="lineNum">     548</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L549"><span class="lineNum">     549</span>              :         }</span>
 <span id="L550"><span class="lineNum">     550</span>              : </span>
-<span id="L551"><span class="lineNum">     551</span> <span class="tlaGNC">          44 :         if (proposal_.approvers[_account]) {</span></span>
+<span id="L551"><span class="lineNum">     551</span> <span class="tlaGNC">          47 :         if (proposal_.approvers[_account]) {</span></span>
 <span id="L552"><span class="lineNum">     552</span>              :             // The approver has already approved</span>
 <span id="L553"><span class="lineNum">     553</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L554"><span class="lineNum">     554</span>              :         }</span>
 <span id="L555"><span class="lineNum">     555</span>              : </span>
-<span id="L556"><span class="lineNum">     556</span> <span class="tlaGNC">          86 :         return true;</span></span>
+<span id="L556"><span class="lineNum">     556</span> <span class="tlaGNC">          92 :         return true;</span></span>
 <span id="L557"><span class="lineNum">     557</span>              :     }</span>
 <span id="L558"><span class="lineNum">     558</span>              : </span>
 <span id="L559"><span class="lineNum">     559</span>              :     /// @notice Internal function to check if an account can confirm a proposal. It assumes the queried proposal exists.</span>
@@ -623,48 +623,48 @@
 <span id="L561"><span class="lineNum">     561</span>              :     /// @param _account The account to check.</span>
 <span id="L562"><span class="lineNum">     562</span>              :     /// @return Returns `true` if the given account can confirm on a certain proposal and `false` otherwise.</span>
 <span id="L563"><span class="lineNum">     563</span>              :     function _canConfirm(uint256 _proposalId, address _account) internal view returns (bool) {</span>
-<span id="L564"><span class="lineNum">     564</span> <span class="tlaGNC">          64 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L564"><span class="lineNum">     564</span> <span class="tlaGNC">          66 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L565"><span class="lineNum">     565</span>              : </span>
-<span id="L566"><span class="lineNum">     566</span> <span class="tlaGNC">          64 :         if (!_isProposalOpen(proposal_)) {</span></span>
+<span id="L566"><span class="lineNum">     566</span> <span class="tlaGNC">          66 :         if (!_isProposalOpen(proposal_)) {</span></span>
 <span id="L567"><span class="lineNum">     567</span>              :             // The proposal was executed already</span>
 <span id="L568"><span class="lineNum">     568</span> <span class="tlaGNC">           6 :             return false;</span></span>
 <span id="L569"><span class="lineNum">     569</span>              :         }</span>
 <span id="L570"><span class="lineNum">     570</span>              : </span>
-<span id="L571"><span class="lineNum">     571</span> <span class="tlaGNC">          58 :         if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {</span></span>
+<span id="L571"><span class="lineNum">     571</span> <span class="tlaGNC">          60 :         if (!isListedAtBlock(_account, proposal_.parameters.snapshotBlock)) {</span></span>
 <span id="L572"><span class="lineNum">     572</span>              :             // The confirmer has no voting power.</span>
 <span id="L573"><span class="lineNum">     573</span> <span class="tlaGNC">           4 :             return false;</span></span>
 <span id="L574"><span class="lineNum">     574</span>              :         }</span>
 <span id="L575"><span class="lineNum">     575</span>              : </span>
 <span id="L576"><span class="lineNum">     576</span>              :         if (</span>
-<span id="L577"><span class="lineNum">     577</span> <span class="tlaGNC">          81 :             proposal_.firstDelayStartTimestamp == 0 ||</span></span>
-<span id="L578"><span class="lineNum">     578</span> <span class="tlaGNC">          75 :             proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration &gt;</span></span>
+<span id="L577"><span class="lineNum">     577</span> <span class="tlaGNC">          84 :             proposal_.firstDelayStartTimestamp == 0 ||</span></span>
+<span id="L578"><span class="lineNum">     578</span> <span class="tlaGNC">          78 :             proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration &gt;</span></span>
 <span id="L579"><span class="lineNum">     579</span>              :             block.timestamp</span>
 <span id="L580"><span class="lineNum">     580</span>              :         ) {</span>
 <span id="L581"><span class="lineNum">     581</span>              :             // The delay has not started yet or has finished</span>
 <span id="L582"><span class="lineNum">     582</span> <span class="tlaGNC">          12 :             return false;</span></span>
 <span id="L583"><span class="lineNum">     583</span>              :         }</span>
 <span id="L584"><span class="lineNum">     584</span>              : </span>
-<span id="L585"><span class="lineNum">     585</span> <span class="tlaGNC">          21 :         if (proposal_.confirmation_approvers[_account]) {</span></span>
+<span id="L585"><span class="lineNum">     585</span> <span class="tlaGNC">          22 :         if (proposal_.confirmation_approvers[_account]) {</span></span>
 <span id="L586"><span class="lineNum">     586</span>              :             // The confirmer has already confirmed</span>
 <span id="L587"><span class="lineNum">     587</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L588"><span class="lineNum">     588</span>              :         }</span>
 <span id="L589"><span class="lineNum">     589</span>              : </span>
-<span id="L590"><span class="lineNum">     590</span> <span class="tlaGNC">          40 :         return true;</span></span>
+<span id="L590"><span class="lineNum">     590</span> <span class="tlaGNC">          42 :         return true;</span></span>
 <span id="L591"><span class="lineNum">     591</span>              :     }</span>
 <span id="L592"><span class="lineNum">     592</span>              : </span>
 <span id="L593"><span class="lineNum">     593</span>              :     /// @notice Internal function to check if a proposal can be executed. It assumes the queried proposal exists.</span>
 <span id="L594"><span class="lineNum">     594</span>              :     /// @param _proposalId The ID of the proposal.</span>
 <span id="L595"><span class="lineNum">     595</span>              :     /// @return Returns `true` if the proposal can be executed and `false` otherwise.</span>
 <span id="L596"><span class="lineNum">     596</span>              :     function _canExecute(uint256 _proposalId) internal view returns (bool) {</span>
-<span id="L597"><span class="lineNum">     597</span> <span class="tlaGNC">          48 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
+<span id="L597"><span class="lineNum">     597</span> <span class="tlaGNC">          52 :         Proposal storage proposal_ = proposals[_proposalId];</span></span>
 <span id="L598"><span class="lineNum">     598</span>              : </span>
 <span id="L599"><span class="lineNum">     599</span>              :         // Verify that the proposal has not been executed or expired.</span>
-<span id="L600"><span class="lineNum">     600</span> <span class="tlaGNC">          48 :         if (!_isProposalOpen(proposal_)) {</span></span>
+<span id="L600"><span class="lineNum">     600</span> <span class="tlaGNC">          52 :         if (!_isProposalOpen(proposal_)) {</span></span>
 <span id="L601"><span class="lineNum">     601</span> <span class="tlaGNC">           2 :             return false;</span></span>
 <span id="L602"><span class="lineNum">     602</span>              :         }</span>
 <span id="L603"><span class="lineNum">     603</span>              : </span>
-<span id="L604"><span class="lineNum">     604</span> <span class="tlaGNC">          46 :         return</span></span>
-<span id="L605"><span class="lineNum">     605</span> <span class="tlaGNC">          46 :             proposal_.parameters.emergency</span></span>
+<span id="L604"><span class="lineNum">     604</span> <span class="tlaGNC">          50 :         return</span></span>
+<span id="L605"><span class="lineNum">     605</span> <span class="tlaGNC">          50 :             proposal_.parameters.emergency</span></span>
 <span id="L606"><span class="lineNum">     606</span>              :                 ? proposal_.approvals &gt;= proposal_.parameters.emergencyMinApprovals</span>
 <span id="L607"><span class="lineNum">     607</span>              :                 : (proposal_.approvals &gt;= proposal_.parameters.minApprovals &amp;&amp;</span>
 <span id="L608"><span class="lineNum">     608</span>              :                     proposal_.confirmations &gt;= proposal_.parameters.minApprovals);</span>
@@ -674,19 +674,19 @@
 <span id="L612"><span class="lineNum">     612</span>              :     /// @param proposal_ The proposal struct.</span>
 <span id="L613"><span class="lineNum">     613</span>              :     /// @return True if the proposal vote is open, false otherwise.</span>
 <span id="L614"><span class="lineNum">     614</span>              :     function _isProposalOpen(Proposal storage proposal_) internal view returns (bool) {</span>
-<span id="L615"><span class="lineNum">     615</span> <span class="tlaGNC">         315 :         uint64 currentTimestamp64 = block.timestamp.toUint64();</span></span>
-<span id="L616"><span class="lineNum">     616</span> <span class="tlaGNC">         210 :         return</span></span>
-<span id="L617"><span class="lineNum">     617</span> <span class="tlaGNC">         420 :             !proposal_.executed &amp;&amp;</span></span>
-<span id="L618"><span class="lineNum">     618</span> <span class="tlaGNC">         204 :             proposal_.parameters.startDate &lt;= currentTimestamp64 &amp;&amp;</span></span>
-<span id="L619"><span class="lineNum">     619</span> <span class="tlaGNC">         204 :             proposal_.parameters.endDate &gt;= currentTimestamp64;</span></span>
+<span id="L615"><span class="lineNum">     615</span> <span class="tlaGNC">         333 :         uint64 currentTimestamp64 = block.timestamp.toUint64();</span></span>
+<span id="L616"><span class="lineNum">     616</span> <span class="tlaGNC">         222 :         return</span></span>
+<span id="L617"><span class="lineNum">     617</span> <span class="tlaGNC">         444 :             !proposal_.executed &amp;&amp;</span></span>
+<span id="L618"><span class="lineNum">     618</span> <span class="tlaGNC">         216 :             proposal_.parameters.startDate &lt;= currentTimestamp64 &amp;&amp;</span></span>
+<span id="L619"><span class="lineNum">     619</span> <span class="tlaGNC">         216 :             proposal_.parameters.endDate &gt;= currentTimestamp64;</span></span>
 <span id="L620"><span class="lineNum">     620</span>              :     }</span>
 <span id="L621"><span class="lineNum">     621</span>              : </span>
 <span id="L622"><span class="lineNum">     622</span>              :     /// @notice Internal function to update the plugin settings.</span>
 <span id="L623"><span class="lineNum">     623</span>              :     /// @param _multisigSettings The new settings.</span>
 <span id="L624"><span class="lineNum">     624</span>              :     function _updateMultisigSettings(MultisigSettings calldata _multisigSettings) internal {</span>
-<span id="L625"><span class="lineNum">     625</span> <span class="tlaGNC">         207 :         uint16 addresslistLength_ = uint16(addresslistLength());</span></span>
+<span id="L625"><span class="lineNum">     625</span> <span class="tlaGNC">         216 :         uint16 addresslistLength_ = uint16(addresslistLength());</span></span>
 <span id="L626"><span class="lineNum">     626</span>              : </span>
-<span id="L627"><span class="lineNum">     627</span> <span class="tlaGNC">         138 :         if (_multisigSettings.minApprovals &gt; _multisigSettings.emergencyMinApprovals) {</span></span>
+<span id="L627"><span class="lineNum">     627</span> <span class="tlaGNC">         144 :         if (_multisigSettings.minApprovals &gt; _multisigSettings.emergencyMinApprovals) {</span></span>
 <span id="L628"><span class="lineNum">     628</span> <span class="tlaGNC">           6 :             revert MinApprovalsOutOfBounds({</span></span>
 <span id="L629"><span class="lineNum">     629</span>              :                 limit: _multisigSettings.emergencyMinApprovals,</span>
 <span id="L630"><span class="lineNum">     630</span>              :                 actual: _multisigSettings.minApprovals</span>
@@ -694,8 +694,8 @@
 <span id="L632"><span class="lineNum">     632</span>              :         }</span>
 <span id="L633"><span class="lineNum">     633</span>              : </span>
 <span id="L634"><span class="lineNum">     634</span>              :         if (</span>
-<span id="L635"><span class="lineNum">     635</span> <span class="tlaGNC">         198 :             _multisigSettings.minApprovals &gt; addresslistLength_ ||</span></span>
-<span id="L636"><span class="lineNum">     636</span> <span class="tlaGNC">         132 :             _multisigSettings.emergencyMinApprovals &gt; addresslistLength_</span></span>
+<span id="L635"><span class="lineNum">     635</span> <span class="tlaGNC">         207 :             _multisigSettings.minApprovals &gt; addresslistLength_ ||</span></span>
+<span id="L636"><span class="lineNum">     636</span> <span class="tlaGNC">         138 :             _multisigSettings.emergencyMinApprovals &gt; addresslistLength_</span></span>
 <span id="L637"><span class="lineNum">     637</span>              :         ) {</span>
 <span id="L638"><span class="lineNum">     638</span> <span class="tlaGNC">           2 :             revert MinApprovalsOutOfBounds({</span></span>
 <span id="L639"><span class="lineNum">     639</span>              :                 limit: addresslistLength_,</span>
@@ -703,14 +703,14 @@
 <span id="L641"><span class="lineNum">     641</span>              :             });</span>
 <span id="L642"><span class="lineNum">     642</span>              :         }</span>
 <span id="L643"><span class="lineNum">     643</span>              : </span>
-<span id="L644"><span class="lineNum">     644</span> <span class="tlaGNC">         259 :         if (_multisigSettings.minApprovals &lt; 1 || _multisigSettings.emergencyMinApprovals &lt; 1) {</span></span>
+<span id="L644"><span class="lineNum">     644</span> <span class="tlaGNC">         271 :         if (_multisigSettings.minApprovals &lt; 1 || _multisigSettings.emergencyMinApprovals &lt; 1) {</span></span>
 <span id="L645"><span class="lineNum">     645</span> <span class="tlaGNC">           2 :             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});</span></span>
 <span id="L646"><span class="lineNum">     646</span>              :         }</span>
 <span id="L647"><span class="lineNum">     647</span>              : </span>
-<span id="L648"><span class="lineNum">     648</span> <span class="tlaGNC">         128 :         multisigSettings = _multisigSettings;</span></span>
-<span id="L649"><span class="lineNum">     649</span> <span class="tlaGNC">         128 :         lastMultisigSettingsChange = block.number.toUint64();</span></span>
+<span id="L648"><span class="lineNum">     648</span> <span class="tlaGNC">         134 :         multisigSettings = _multisigSettings;</span></span>
+<span id="L649"><span class="lineNum">     649</span> <span class="tlaGNC">         134 :         lastMultisigSettingsChange = block.number.toUint64();</span></span>
 <span id="L650"><span class="lineNum">     650</span>              : </span>
-<span id="L651"><span class="lineNum">     651</span> <span class="tlaGNC">         128 :         emit MultisigSettingsUpdated({</span></span>
+<span id="L651"><span class="lineNum">     651</span> <span class="tlaGNC">         134 :         emit MultisigSettingsUpdated({</span></span>
 <span id="L652"><span class="lineNum">     652</span>              :             onlyListed: _multisigSettings.onlyListed,</span>
 <span id="L653"><span class="lineNum">     653</span>              :             minApprovals: _multisigSettings.minApprovals,</span>
 <span id="L654"><span class="lineNum">     654</span>              :             emergencyMinApprovals: _multisigSettings.emergencyMinApprovals,</span>
@@ -725,11 +725,11 @@
 <span id="L663"><span class="lineNum">     663</span>              :         Proposal storage proposal_,</span>
 <span id="L664"><span class="lineNum">     664</span>              :         bytes calldata _secondaryMetadata</span>
 <span id="L665"><span class="lineNum">     665</span>              :     ) internal {</span>
-<span id="L666"><span class="lineNum">     666</span> <span class="tlaGNC">          56 :         if (proposal_.secondaryMetadata.length != 0) {</span></span>
+<span id="L666"><span class="lineNum">     666</span> <span class="tlaGNC">          58 :         if (proposal_.secondaryMetadata.length != 0) {</span></span>
 <span id="L667"><span class="lineNum">     667</span> <span class="tlaGNC">           2 :             revert SecondaryMetadataAlreadySet();</span></span>
 <span id="L668"><span class="lineNum">     668</span>              :         }</span>
 <span id="L669"><span class="lineNum">     669</span>              : </span>
-<span id="L670"><span class="lineNum">     670</span> <span class="tlaGNC">          54 :         proposal_.secondaryMetadata = _secondaryMetadata;</span></span>
+<span id="L670"><span class="lineNum">     670</span> <span class="tlaGNC">          56 :         proposal_.secondaryMetadata = _secondaryMetadata;</span></span>
 <span id="L671"><span class="lineNum">     671</span>              :     }</span>
 <span id="L672"><span class="lineNum">     672</span>              : </span>
 <span id="L673"><span class="lineNum">     673</span>              :     /// @dev This empty reserved space is put in place to allow future versions to add new</span>
