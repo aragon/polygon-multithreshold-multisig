@@ -7,11 +7,15 @@ import {IMultisig} from "../src/IMultisig.sol";
 import {IMembership} from "@aragon/osx/core/plugin/membership/IMembership.sol";
 import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
 import {IPlugin} from "@aragon/osx/core/plugin/IPlugin.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {IPluginSetup, PluginSetup} from "@aragon/osx/framework/plugin/setup/PluginSetup.sol";
 
 import {DaoUnauthorized} from "@aragon/osx/core/utils/auth.sol";
 import {AragonTest} from "./base/AragonTest.sol";
 import {PolygonMultisigSetup} from "../src/PolygonMultisigSetup.sol";
 import {PolygonMultisig} from "../src/PolygonMultisig.sol";
+
+import "forge-std/console.sol";
 
 abstract contract PolygonMultisigTest is AragonTest {
     DAO internal dao;
@@ -105,6 +109,31 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         super.setUp();
         vm.expectRevert("Initializable: contract is already initialized");
         plugin.initialize(dao, members, multisigSettings);
+    }
+}
+
+contract PolygonMultisigProposalCreationLimitTest is AragonTest {
+    DAO internal dao;
+    PolygonMultisig internal plugin;
+    PolygonMultisigSetup internal setup;
+    address[] members = new address[](65536);
+    PolygonMultisig.MultisigSettings multisigSettings =
+        PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            emergencyMinApprovals: 1,
+            delayDuration: 1 days
+        });
+
+    function test_reverts_members_list_limit() public {
+        PolygonMultisigSetup _setup = new PolygonMultisigSetup();
+        bytes memory _setupData = abi.encode(members, multisigSettings);
+
+        DAO _dao = DAO(payable(new ERC1967Proxy(address(new DAO()), EMPTY_BYTES)));
+        _dao.initialize(EMPTY_BYTES, address(this), address(0), "");
+        vm.expectRevert();
+        (address plugin, PluginSetup.PreparedSetupData memory preparedSetupData) = _setup
+            .prepareInstallation(address(_dao), _setupData);
     }
 }
 

@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info.pruned</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryHi">99.3&nbsp;%</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
             <td class="headerCovTableEntry">152</td>
-            <td class="headerCovTableEntry">151</td>
+            <td class="headerCovTableEntry">152</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2024-06-28 15:20:10</td>
+            <td class="headerValue">2024-07-05 13:57:34</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -248,13 +248,13 @@
 <span id="L186"><span class="lineNum">     186</span>              :         address[] calldata _members,</span>
 <span id="L187"><span class="lineNum">     187</span>              :         MultisigSettings calldata _multisigSettings</span>
 <span id="L188"><span class="lineNum">     188</span>              :     ) external initializer {</span>
-<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC tlaBgGNC">         130 :         __PluginUUPSUpgradeable_init(_dao);</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC tlaBgGNC">         132 :         __PluginUUPSUpgradeable_init(_dao);</span></span>
 <span id="L190"><span class="lineNum">     190</span>              : </span>
-<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">         130 :         if (_members.length &gt; type(uint16).max) {</span></span>
-<span id="L192"><span class="lineNum">     192</span> <span class="tlaUNC tlaBgUNC">           0 :             revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: _members.length});</span></span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">         132 :         if (_members.length &gt; type(uint16).max) {</span></span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">           2 :             revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: _members.length});</span></span>
 <span id="L193"><span class="lineNum">     193</span>              :         }</span>
 <span id="L194"><span class="lineNum">     194</span>              : </span>
-<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC tlaBgGNC">         130 :         _addAddresses(_members);</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">         130 :         _addAddresses(_members);</span></span>
 <span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">         130 :         emit MembersAdded({members: _members});</span></span>
 <span id="L197"><span class="lineNum">     197</span>              : </span>
 <span id="L198"><span class="lineNum">     198</span> <span class="tlaGNC">         130 :         _updateMultisigSettings(_multisigSettings);</span></span>

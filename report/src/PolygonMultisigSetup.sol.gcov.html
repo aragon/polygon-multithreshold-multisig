@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2024-06-28 15:20:10</td>
+            <td class="headerValue">2024-07-05 13:57:34</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryLo">40.0&nbsp;%</td>
@@ -79,7 +79,7 @@
 <span id="L17"><span class="lineNum">      17</span>              : </span>
 <span id="L18"><span class="lineNum">      18</span>              :     /// @notice The contract constructor, that deploys the `Multisig` plugin logic contract.</span>
 <span id="L19"><span class="lineNum">      19</span>              :     constructor() {</span>
-<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC tlaBgGNC">         390 :         multisigBase = new PolygonMultisig();</span></span>
+<span id="L20"><span class="lineNum">      20</span> <span class="tlaGNC tlaBgGNC">         396 :         multisigBase = new PolygonMultisig();</span></span>
 <span id="L21"><span class="lineNum">      21</span>              :     }</span>
 <span id="L22"><span class="lineNum">      22</span>              : </span>
 <span id="L23"><span class="lineNum">      23</span>              :     /// @inheritdoc IPluginSetup</span>
@@ -88,11 +88,11 @@
 <span id="L26"><span class="lineNum">      26</span>              :         bytes calldata _data</span>
 <span id="L27"><span class="lineNum">      27</span>              :     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {</span>
 <span id="L28"><span class="lineNum">      28</span>              :         // Decode `_data` to extract the params needed for deploying and initializing `Multisig` plugin.</span>
-<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         195 :         (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) = abi</span></span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">         198 :         (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) = abi</span></span>
 <span id="L30"><span class="lineNum">      30</span>              :             .decode(_data, (address[], PolygonMultisig.MultisigSettings));</span>
 <span id="L31"><span class="lineNum">      31</span>              : </span>
 <span id="L32"><span class="lineNum">      32</span>              :         // Prepare and Deploy the plugin proxy.</span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">         130 :         plugin = createERC1967Proxy(</span></span>
+<span id="L33"><span class="lineNum">      33</span> <span class="tlaGNC">         132 :         plugin = createERC1967Proxy(</span></span>
 <span id="L34"><span class="lineNum">      34</span>              :             address(multisigBase),</span>
 <span id="L35"><span class="lineNum">      35</span>              :             abi.encodeWithSelector(</span>
 <span id="L36"><span class="lineNum">      36</span>              :                 PolygonMultisig.initialize.selector,</span>
