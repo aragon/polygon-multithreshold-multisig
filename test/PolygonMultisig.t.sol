@@ -27,7 +27,8 @@ abstract contract PolygonMultisigTest is AragonTest {
             onlyListed: true,
             minApprovals: 1,
             emergencyMinApprovals: 1,
-            delayDuration: 1 days
+            delayDuration: 1 days,
+            memberOnlyProposalExecution: false
         });
 
     function setUp() public virtual {
@@ -53,7 +54,8 @@ abstract contract PolygonMultisigExtraMembersTest is AragonTest {
             onlyListed: true,
             minApprovals: 1,
             emergencyMinApprovals: 3,
-            delayDuration: 1 days
+            delayDuration: 1 days,
+            memberOnlyProposalExecution: false
         });
 
     function setUp() public virtual {
@@ -78,12 +80,14 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
             bool _onlyListed,
             uint16 _minApprovals,
             uint16 _emergencyMinApprovals,
-            uint64 _delayDuration
+            uint64 _delayDuration,
+            bool _memberOnlyProposalExecution
         ) = plugin.multisigSettings();
         assertEq(_onlyListed, multisigSettings.onlyListed);
         assertEq(_minApprovals, multisigSettings.minApprovals);
         assertEq(_emergencyMinApprovals, multisigSettings.emergencyMinApprovals);
         assertEq(_delayDuration, multisigSettings.delayDuration);
+        assertEq(_memberOnlyProposalExecution, multisigSettings.memberOnlyProposalExecution);
     }
 
     function test_members_list_limit() public {
@@ -122,7 +126,8 @@ contract PolygonMultisigProposalCreationLimitTest is AragonTest {
             onlyListed: true,
             minApprovals: 1,
             emergencyMinApprovals: 1,
-            delayDuration: 1 days
+            delayDuration: 1 days,
+            memberOnlyProposalExecution: false
         });
 
     function test_reverts_members_list_limit() public {
@@ -293,7 +298,8 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 2,
             delayDuration: 1 days,
-            emergencyMinApprovals: 2
+            emergencyMinApprovals: 2,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -315,7 +321,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         plugin.execute(0);
@@ -323,12 +329,14 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             bool _onlyListed,
             uint16 _minApprovals,
             uint16 _emergencyMinApprovals,
-            uint64 _delayDuration
+            uint64 _delayDuration,
+            bool _memberOnlyProposalExecution
         ) = plugin.multisigSettings();
         assertEq(_onlyListed, true);
         assertEq(_minApprovals, 2);
         assertEq(_emergencyMinApprovals, 2);
         assertEq(_delayDuration, 1 days);
+        assertEq(_memberOnlyProposalExecution, false);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -739,7 +747,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
         plugin.confirm(0);
@@ -751,7 +759,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         vm.expectRevert(
@@ -768,7 +776,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 2 days);
         assertEq(plugin.canConfirm(0, address(0xB0b)), false);
         vm.expectRevert(
@@ -785,7 +793,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration - 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), false);
         vm.expectRevert(
@@ -802,7 +810,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         vm.startPrank(address(0xDad));
         assertEq(plugin.canConfirm(0, address(0xDad)), false);
@@ -832,7 +840,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         plugin.execute(0);
@@ -897,7 +905,7 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
         plugin.confirm(0);
@@ -930,7 +938,7 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
         vm.expectRevert(
@@ -943,7 +951,7 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
         plugin.confirm(0);
@@ -1036,7 +1044,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         plugin.execute(0);
@@ -1069,7 +1077,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         plugin.execute(0);
@@ -1103,7 +1111,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1137,7 +1145,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration) = plugin.multisigSettings();
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1157,7 +1165,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 2,
             delayDuration: 1 days,
-            emergencyMinApprovals: 2
+            emergencyMinApprovals: 2,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1179,7 +1188,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         plugin.execute(0);
@@ -1187,12 +1196,14 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             bool _onlyListed,
             uint16 _minApprovals,
             uint16 _emergencyMinApprovals,
-            uint64 _delayDuration
+            uint64 _delayDuration,
+            bool _memberOnlyProposalExecution
         ) = plugin.multisigSettings();
         assertEq(_onlyListed, true);
         assertEq(_minApprovals, 2);
         assertEq(_emergencyMinApprovals, 2);
         assertEq(_delayDuration, 1 days);
+        assertEq(_memberOnlyProposalExecution, false);
     }
 
     function test_reverts_if_min_approvals_is_zero() public {
@@ -1202,7 +1213,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 0,
             delayDuration: 1 days,
-            emergencyMinApprovals: 1
+            emergencyMinApprovals: 1,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1224,7 +1236,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1238,7 +1250,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 2,
             delayDuration: 1 days,
-            emergencyMinApprovals: 0
+            emergencyMinApprovals: 0,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1260,7 +1273,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1274,7 +1287,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 3,
             delayDuration: 1 days,
-            emergencyMinApprovals: 1
+            emergencyMinApprovals: 1,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1296,7 +1310,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1310,7 +1324,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 1,
             delayDuration: 1 days,
-            emergencyMinApprovals: 3
+            emergencyMinApprovals: 3,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1332,7 +1347,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         vm.expectRevert();
@@ -1346,7 +1361,8 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             onlyListed: true,
             minApprovals: 2,
             delayDuration: 1 days,
-            emergencyMinApprovals: 1
+            emergencyMinApprovals: 1,
+            memberOnlyProposalExecution: false
         });
 
         _actions[0] = IDAO.Action({
@@ -1368,7 +1384,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
 
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , uint64 _delay) = plugin.multisigSettings();
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
         plugin.confirm(0);
         vm.expectRevert();

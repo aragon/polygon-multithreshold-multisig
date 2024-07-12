@@ -72,12 +72,14 @@ contract PolygonMultisig is
     /// @param minApprovals The minimal number of approvals required for a proposal to pass.
     /// @param emergencyMinApprovals The minimal number of approvals required for an emergency proposal to pass.
     /// @param delayDuration The duration of the delay.
+    /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
     struct MultisigSettings {
         bool onlyListed;
         uint16 minApprovals;
         // New data
         uint16 emergencyMinApprovals;
         uint64 delayDuration;
+        bool memberOnlyProposalExecution;
     }
 
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
@@ -173,7 +175,8 @@ contract PolygonMultisig is
         bool onlyListed,
         uint16 indexed minApprovals,
         uint16 emergencyMinApprovals,
-        uint64 delayDuration
+        uint64 delayDuration,
+        bool memberOnlyProposalExecution
     );
 
     /// @notice Initializes Release 1, Build 1.
@@ -601,6 +604,10 @@ contract PolygonMultisig is
             return false;
         }
 
+        if (multisigSettings.memberOnlyProposalExecution && !isListed(_msgSender())) {
+            return false;
+        }
+
         return
             proposal_.parameters.emergency
                 ? proposal_.approvals >= proposal_.parameters.emergencyMinApprovals
@@ -652,7 +659,8 @@ contract PolygonMultisig is
             onlyListed: _multisigSettings.onlyListed,
             minApprovals: _multisigSettings.minApprovals,
             emergencyMinApprovals: _multisigSettings.emergencyMinApprovals,
-            delayDuration: _multisigSettings.delayDuration
+            delayDuration: _multisigSettings.delayDuration,
+            memberOnlyProposalExecution: _multisigSettings.memberOnlyProposalExecution
         });
     }
 
