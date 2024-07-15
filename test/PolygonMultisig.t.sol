@@ -28,7 +28,7 @@ abstract contract PolygonMultisigTest is AragonTest {
             minApprovals: 1,
             emergencyMinApprovals: 1,
             delayDuration: 1 days,
-            memberOnlyProposalExecution: false
+            memberOnlyProposalExecution: true
         });
 
     function setUp() public virtual {
@@ -527,6 +527,18 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
         plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
     }
+
+    function test_revert_execute_proposal_when_no_member() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(0);
+        assertEq(plugin.canExecute(0), true);
+        vm.stopPrank();
+        vm.startPrank(address(0xdeaad));
+        vm.expectRevert(
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+        );
+        plugin.execute(0);
+    }
 }
 
 contract PolygonMultisigEmergencyExtraMembersFlows is PolygonMultisigExtraMembersTest {
@@ -1005,6 +1017,7 @@ contract PolygonMultisigGettersTest is PolygonMultisigTest {
         assertEq(_parameters.delayDuration, uint64(1 days));
         assertEq(_parameters.emergency, false);
         assertEq(_parameters.emergencyMinApprovals, 1);
+        assertEq(_parameters.memberOnlyProposalExecution, true);
         assertEq(_actions.length, 1);
         assertEq(_allowFailureMap, 0);
         assertEq(_confirmations, 0);

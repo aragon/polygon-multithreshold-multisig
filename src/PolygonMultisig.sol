@@ -56,6 +56,7 @@ contract PolygonMultisig is
     /// @param delayDuration The duration of the delay.
     /// @param emergency Whether the proposal is an emergency proposal or not.
     /// @param emergencyMinApprovals The number of approvals required for an emergency proposal.
+    /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
     struct ProposalParameters {
         uint16 minApprovals;
         uint64 snapshotBlock;
@@ -65,6 +66,7 @@ contract PolygonMultisig is
         uint64 delayDuration;
         bool emergency;
         uint16 emergencyMinApprovals;
+        bool memberOnlyProposalExecution;
     }
 
     /// @notice A container for the plugin settings.
@@ -325,6 +327,8 @@ contract PolygonMultisig is
         proposal_.parameters.emergency = _emergency;
         proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;
         proposal_.parameters.delayDuration = multisigSettings.delayDuration;
+        proposal_.parameters.memberOnlyProposalExecution = multisigSettings
+            .memberOnlyProposalExecution;
 
         // Reduce costs
         if (_allowFailureMap != 0) {
@@ -604,7 +608,7 @@ contract PolygonMultisig is
             return false;
         }
 
-        if (multisigSettings.memberOnlyProposalExecution && !isListed(_msgSender())) {
+        if (proposal_.parameters.memberOnlyProposalExecution && !isListed(_msgSender())) {
             return false;
         }
 
