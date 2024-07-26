@@ -42,6 +42,39 @@ abstract contract PolygonMultisigTest is AragonTest {
         plugin = PolygonMultisig(_plugin);
         vm.roll(block.number + 1);
     }
+
+    function addMemberToPluginWithoutExecution(
+        address[] memory _members
+    ) internal returns (uint256) {
+        vm.stopPrank();
+        vm.startPrank(address(0xB0b));
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.addAddresses, _members)
+        });
+
+        uint256 proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
+        vm.warp(block.timestamp + 1 days);
+        plugin.confirm(proposalId);
+
+        vm.stopPrank();
+
+        return proposalId;
+    }
 }
 
 abstract contract PolygonMultisigExtraMembersTest is AragonTest {
@@ -1402,5 +1435,57 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         plugin.confirm(0);
         vm.expectRevert();
         plugin.execute(0);
+    }
+}
+
+contract PolygonMultisigIsListedEdgesTest is PolygonMultisigTest {
+    function setUp() public override {
+        super.setUp();
+    }
+
+    // function test_fail_adding_secondary_metadata_when_not_in_right_block() public {}
+
+    function test_fail_executing_when_member_not_in_right_block() public {
+        address intruder = address(0xdead);
+        address[] memory intruders = new address[](1);
+        intruders[0] = intruder;
+        // Creating the first proposal to add the intruder
+        uint256 intruderProposalId = super.addMemberToPluginWithoutExecution(intruders);
+
+        vm.startPrank(address(0xB0b));
+        // Creating the second proposal to test the intruder execution permissions
+        uint256 secondProposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: new IDAO.Action[](0),
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+
+        // Passing the first proposal to add the intruder
+        plugin.execute(intruderProposalId);
+
+        // Taking the second proposal to the last stage
+        plugin.approve(secondProposalId);
+        plugin.startProposalDelay(secondProposalId, bytes("ipfs://world"));
+        (, , , uint64 _delay, ) = plugin.multisigSettings();
+        vm.warp(block.timestamp + 1 days);
+        plugin.confirm(secondProposalId);
+        vm.stopPrank();
+
+        vm.startPrank(intruder);
+        assertTrue(plugin.isMember(intruder) == true, "should be member");
+        // Executer is member, but was not included in the block where the proposal was created
+        vm.expectRevert();
+        plugin.execute(secondProposalId);
+        vm.stopPrank();
+
+        vm.startPrank(address(0xB0b));
+        plugin.execute(secondProposalId);
+
+        (bool _executed, , , , , , , , ) = plugin.getProposal(secondProposalId);
+        assertEq(_executed, true);
     }
 }
