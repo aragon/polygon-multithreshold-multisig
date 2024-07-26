@@ -1443,7 +1443,40 @@ contract PolygonMultisigIsListedEdgesTest is PolygonMultisigTest {
         super.setUp();
     }
 
-    // function test_fail_adding_secondary_metadata_when_not_in_right_block() public {}
+    function test_fail_adding_secondary_metadata_when_not_in_right_block() public {
+        address intruder = address(0xdead);
+        address[] memory intruders = new address[](1);
+        intruders[0] = intruder;
+        // Creating the first proposal to add the intruder
+        uint256 intruderProposalId = super.addMemberToPluginWithoutExecution(intruders);
+
+        vm.startPrank(address(0xB0b));
+        // Creating the second proposal to test the intruder execution permissions
+        uint256 secondProposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: new IDAO.Action[](0),
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+
+        // Passing the first proposal to add the intruder
+        plugin.execute(intruderProposalId);
+
+        // Taking the second proposal to the last stage
+        plugin.approve(secondProposalId);
+
+        vm.stopPrank();
+        vm.startPrank(intruder);
+        vm.expectRevert();
+        plugin.startProposalDelay(secondProposalId, bytes("ipfs://world"));
+
+        vm.stopPrank();
+        vm.startPrank(address(0xB0b));
+        plugin.startProposalDelay(secondProposalId, bytes("ipfs://world"));
+    }
 
     function test_fail_executing_when_member_not_in_right_block() public {
         address intruder = address(0xdead);
