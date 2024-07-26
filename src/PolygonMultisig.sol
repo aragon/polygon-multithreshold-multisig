@@ -10,8 +10,9 @@ import {ProposalUpgradeable} from "@aragon/osx/core/plugin/proposal/ProposalUpgr
 import {Addresslist} from "@aragon/osx/plugins/utils/Addresslist.sol";
 
 /// @title PolygonMultisig - Release 1, Build 1
-/// @author Aragon Association - 2024
-/// @notice The on-chain multisig governance plugin in which a proposal passes if X out of Y approvals are met.
+/// @author AragonX - 2024
+/// @notice The on-chain Polygon Multisig governance plugin in which a proposal passes if X out of Y approvals are met for emergency proposals.
+/// or requiring a second round of approvals for non-emergency proposals. The plugin allows for a delay to be started for non-emergency proposals.
 contract PolygonMultisig is
     IMultisig,
     IMembership,
