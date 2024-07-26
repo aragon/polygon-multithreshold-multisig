@@ -451,12 +451,12 @@ contract PolygonMultisig is
     function _checkProposalForMetadata(
         uint256 _proposalId
     ) internal view returns (Proposal storage) {
-        if (!isListed(_msgSender())) {
-            revert NotInMemberList(_msgSender());
-        }
-
         Proposal storage proposal_ = proposals[_proposalId];
         uint64 currentTimestamp64 = block.timestamp.toUint64();
+
+        if (!isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)) {
+            revert NotInMemberList(_msgSender());
+        }
 
         if (
             proposal_.firstDelayStartTimestamp != 0 ||
@@ -608,7 +608,10 @@ contract PolygonMultisig is
             return false;
         }
 
-        if (proposal_.parameters.memberOnlyProposalExecution && !isListed(_msgSender())) {
+        if (
+            proposal_.parameters.memberOnlyProposalExecution &&
+            !isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)
+        ) {
             return false;
         }
 
