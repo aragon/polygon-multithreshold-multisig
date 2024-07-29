@@ -22,6 +22,12 @@ contract PolygonMultisig is
 {
     using SafeCastUpgradeable for uint256;
 
+    /// @notice MIN_EXTRA_DURATION is the minimal extra duration for a proposal endTime for people to vote.
+    uint256 immutable MIN_EXTRA_DURATION = 0.5 days;
+
+    /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
+    uint256 immutable MIN_APPROVALS_THREEHOLDS = 1;
+
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
     /// @param approvals The number of approvals casted.
@@ -303,7 +309,12 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: block.timestamp.toUint64(), actual: _startDate});
         }
 
-        if (_endDate < _startDate) {
+        // startDate + delayDuration + MIN_EXTRA_DURATION <= endDate
+
+        if (
+            _endDate < _startDate ||
+            _startDate + multisigSettings.delayDuration + MIN_EXTRA_DURATION > _endDate
+        ) {
             revert DateOutOfBounds({limit: _startDate, actual: _endDate});
         }
 
@@ -656,7 +667,10 @@ contract PolygonMultisig is
             });
         }
 
-        if (_multisigSettings.minApprovals < 1 || _multisigSettings.emergencyMinApprovals < 1) {
+        if (
+            _multisigSettings.minApprovals < MIN_APPROVALS_THREEHOLDS ||
+            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREEHOLDS
+        ) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
 

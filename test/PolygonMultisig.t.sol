@@ -27,7 +27,7 @@ abstract contract PolygonMultisigTest is AragonTest {
             onlyListed: true,
             minApprovals: 1,
             emergencyMinApprovals: 1,
-            delayDuration: 1 days,
+            delayDuration: 0.5 days,
             memberOnlyProposalExecution: true
         });
 
@@ -87,7 +87,7 @@ abstract contract PolygonMultisigExtraMembersTest is AragonTest {
             onlyListed: true,
             minApprovals: 1,
             emergencyMinApprovals: 3,
-            delayDuration: 1 days,
+            delayDuration: 0.5 days,
             memberOnlyProposalExecution: false
         });
 
@@ -426,6 +426,45 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         assertEq(plugin.canConfirm(0, address(0xB0b)), false);
         vm.warp(block.timestamp + 1 days);
         assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+    }
+
+    function test_proposal_creation_at_edge_time() public {
+        vm.prank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 0.5 days + 0.5 days),
+            _emergency: false
+        });
+    }
+
+    function test_proposal_creation_fails_if_end_time_is_less_than_extra_delay() public {
+        vm.prank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PolygonMultisig.DateOutOfBounds.selector,
+                uint64(block.timestamp),
+                uint64(block.timestamp + 1 days - 1)
+            )
+        );
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 0.5 days + 0.5 days - 1),
+            _emergency: false
+        });
     }
 
     function test_reverts_if_not_member() public {
@@ -918,7 +957,7 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         plugin.approve(0);
         plugin.startProposalDelay(0, bytes("ipfs://world"));
-        vm.warp(block.timestamp + 1 days - 1);
+        vm.warp(block.timestamp + 0.5 days - 1);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
@@ -1047,7 +1086,7 @@ contract PolygonMultisigGettersTest is PolygonMultisigTest {
         assertEq(_parameters.snapshotBlock, uint64(block.number - 1));
         assertEq(_parameters.startDate, uint64(block.timestamp));
         assertEq(_parameters.endDate, uint64(block.timestamp + 1 days));
-        assertEq(_parameters.delayDuration, uint64(1 days));
+        assertEq(_parameters.delayDuration, uint64(0.5 days));
         assertEq(_parameters.emergency, false);
         assertEq(_parameters.emergencyMinApprovals, 1);
         assertEq(_parameters.memberOnlyProposalExecution, true);
