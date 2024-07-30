@@ -105,6 +105,9 @@ contract PolygonMultisig is
     /// @notice A mapping between proposal IDs and proposal information.
     mapping(uint256 => Proposal) internal proposals;
 
+    /// @notice A mapping between the proposal index and the proposal ID.
+    mapping(uint256 => uint256) internal proposalIndexToId;
+
     /// @notice The current plugin settings.
     MultisigSettings public multisigSettings;
 
@@ -318,7 +321,7 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: _startDate, actual: _endDate});
         }
 
-        proposalId = _createProposal({
+        uint256 proposalIndex = _createProposal({
             _creator: _msgSender(),
             _metadata: _metadata,
             _startDate: _startDate,
@@ -326,6 +329,20 @@ contract PolygonMultisig is
             _actions: _actions,
             _allowFailureMap: _allowFailureMap
         });
+
+        proposalId = uint256(
+            keccak256(
+                abi.encode(
+                    _msgSender(),
+                    _metadata,
+                    _actions,
+                    block.number // Include block number for uniqueness
+                )
+            )
+        );
+
+        // Index the proposal id by its count
+        proposalIndexToId[proposalIndex] = proposalId;
 
         // Create the proposal
         Proposal storage proposal_ = proposals[proposalId];
@@ -453,6 +470,48 @@ contract PolygonMultisig is
         metadata = proposal_.metadata;
         secondaryMetadata = proposal_.secondaryMetadata;
         firstDelayStartTimestamp = proposal_.firstDelayStartTimestamp;
+    }
+
+    /// @notice Returns the proposal id given its index.
+    /// @param _proposalIndex The index of the proposal.
+    /// @return The ID of the proposal.
+    function getProposalIdByIndex(uint256 _proposalIndex)
+        external
+        view
+        returns (uint256)
+    {
+        return proposalIndexToId[_proposalIndex];
+    }
+
+    /// @notice Returns all information for a proposal vote by its index.
+    /// @param _proposalIndex The index of the proposal.
+    /// @return executed Whether the proposal is executed or not.
+    /// @return approvals The number of approvals casted.
+    /// @return parameters The parameters of the proposal vote.
+    /// @return actions The actions to be executed in the associated DAO after the proposal has passed.
+    /// @return allowFailureMap A bitmap allowing the proposal to succeed, even if individual actions might revert. If the bit at index `i` is 1, the proposal succeeds even if the `i`th action reverts. A failure map value of 0 requires every action to not revert.
+    /// @return confirmations The number of confirmations casted (second approval round).
+    /// @return metadata The metadata of the proposal, usually stored in IPFS.
+    /// @return secondaryMetadata The secondary metadata of the proposal, can only be changed once.
+    /// @return firstDelayStartTimestamp The block timestamp when the first delay started.
+    function getProposalByIndex(
+        uint256 _proposalIndex
+    )
+        external
+        view
+        returns (
+            bool executed,
+            uint16 approvals,
+            ProposalParameters memory parameters,
+            IDAO.Action[] memory actions,
+            uint256 allowFailureMap,
+            uint16 confirmations,
+            bytes memory metadata,
+            bytes memory secondaryMetadata,
+            uint64 firstDelayStartTimestamp
+        )
+    {
+        return getProposal(proposalIndexToId[_proposalIndex]);
     }
 
     /// @inheritdoc IMultisig

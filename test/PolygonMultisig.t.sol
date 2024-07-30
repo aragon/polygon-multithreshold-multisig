@@ -185,7 +185,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
-        plugin.createProposal({
+        uint256 proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 1,
@@ -195,6 +195,13 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
         assertEq(plugin.proposalCount(), 1);
+        assertEq(
+            proposalId,
+            uint256(
+                keccak256(abi.encode(address(0xB0b), bytes("ipfs://hello"), _actions, block.number))
+            )
+        );
+        assertEq(plugin.getProposalIdByIndex(0), proposalId);
     }
 
     function test_voting_within_proposal_creation() public {
@@ -202,7 +209,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
-        plugin.createProposal({
+        uint256 proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -212,11 +219,11 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
         assertEq(plugin.proposalCount(), 1);
-        assertEq(plugin.hasApproved(0, address(0xB0b)), true);
+        assertEq(plugin.hasApproved(proposalId, address(0xB0b)), true);
     }
 
     function test_reverts_if_not_member() public {
-        vm.prank(address(0x0));
+        vm.startPrank(address(0x0));
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
@@ -342,7 +349,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        uint256 proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -352,12 +359,12 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
-        plugin.execute(0);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
         (
             bool _onlyListed,
             uint16 _minApprovals,
@@ -390,13 +397,15 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
 }
 
 contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.prank(address(0xB0b));
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -409,23 +418,23 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
 
     function test_secondary_metadata() public {
         vm.startPrank(address(0xB0b));
-        assertEq(plugin.canApprove(0, address(0xB0b)), true);
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
+        assertEq(plugin.canApprove(proposalId, address(0xB0b)), true);
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
     function test_delay_lasts_the_defined_amount() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
-        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
 
-        assertEq(plugin.canConfirm(0, address(0xB0b)), false);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), false);
         vm.warp(block.timestamp + 1 days);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), true);
     }
 
     function test_proposal_creation_at_edge_time() public {
@@ -472,30 +481,30 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         vm.expectRevert(
             abi.encodeWithSelector(PolygonMultisig.NotInMemberList.selector, address(0x0))
         );
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_metadata_was_already_set() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         vm.expectRevert(PolygonMultisig.MetadataCantBeSet.selector);
-        plugin.startProposalDelay(0, bytes("ipfs://failure"));
+        plugin.startProposalDelay(proposalId, bytes("ipfs://failure"));
     }
 
     function test_reverts_if_delay_started_after_end_date() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.warp(block.timestamp + 1 days + 1);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_emergency_metadata_called() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_not_enough_approvals() public {
@@ -503,13 +512,13 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         vm.expectRevert(
             abi.encodeWithSelector(PolygonMultisig.InsuficientApprovals.selector, 0, 1)
         );
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_proposal_is_emergency() public {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        uint256 _secondProposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -518,20 +527,22 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
             _endDate: uint64(block.timestamp + 1 days),
             _emergency: true
         });
-        plugin.approve(1);
+        plugin.approve(_secondProposalId);
         vm.expectRevert(
             abi.encodeWithSelector(PolygonMultisig.EmergencyProposalCantBeDelayed.selector)
         );
-        plugin.startProposalDelay(1, bytes("ipfs://world"));
+        plugin.startProposalDelay(_secondProposalId, bytes("ipfs://world"));
     }
 }
 
 contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -545,80 +556,82 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
     // executes after a proposal has been approved
     function test_execute_proposal() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        assertEq(plugin.canExecute(0), true);
-        plugin.execute(0);
-        (bool _executed, , , , , , , , ) = plugin.getProposal(0);
+        plugin.approve(proposalId);
+        assertEq(plugin.canExecute(proposalId), true);
+        plugin.execute(proposalId);
+        (bool _executed, , , , , , , , ) = plugin.getProposal(proposalId);
         assertEq(_executed, true);
     }
 
     function test_emergency_can_set_metadata_before() public {
         vm.startPrank(address(0xB0b));
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
-        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
     function test_emergency_can_set_metadata_after() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
-        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposal(0);
+        plugin.approve(proposalId);
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
     function test_reverts_if_not_enough_approvals_in_emergency() public {
         vm.startPrank(address(0xB0b));
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_emergency_metadata_after_execution() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.execute(0);
+        plugin.approve(proposalId);
+        plugin.execute(proposalId);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_emergency_metadata_already_set() public {
         vm.startPrank(address(0xB0b));
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
         vm.expectRevert(
             abi.encodeWithSelector(PolygonMultisig.SecondaryMetadataAlreadySet.selector)
         );
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_emergency_metadata_after_delay() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.warp(block.timestamp + 3 days);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(0, bytes("ipfs://world"));
+        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
     function test_revert_execute_proposal_when_no_member() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        assertEq(plugin.canExecute(0), true);
+        plugin.approve(proposalId);
+        assertEq(plugin.canExecute(proposalId), true);
         vm.stopPrank();
         vm.startPrank(address(0xdeaad));
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 }
 
 contract PolygonMultisigEmergencyExtraMembersFlows is PolygonMultisigExtraMembersTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -633,46 +646,48 @@ contract PolygonMultisigEmergencyExtraMembersFlows is PolygonMultisigExtraMember
     // executes after a proposal has been approved
     function test_execute_proposal() public {
         vm.prank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.stopPrank();
 
         vm.prank(address(0xDead));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.stopPrank();
 
         vm.prank(address(0xBeef));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.stopPrank();
 
-        plugin.execute(0);
-        (bool _executed, , , , , , , , ) = plugin.getProposal(0);
+        plugin.execute(proposalId);
+        (bool _executed, , , , , , , , ) = plugin.getProposal(proposalId);
         assertEq(_executed, true);
     }
 
     function test_reverts_if_not_enough_approvals_in_emergency() public {
         vm.prank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
         vm.stopPrank();
 
         vm.prank(address(0xDead));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 }
 
 contract PolygonMultisigApprovals is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -685,15 +700,15 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
 
     function test_approval() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        (, uint16 _approvals, , , , , , , ) = plugin.getProposal(0);
+        plugin.approve(proposalId);
+        (, uint16 _approvals, , , , , , , ) = plugin.getProposalByIndex(0);
         assertEq(_approvals, uint16(1));
     }
 
     function test_approve_proposal_at_start() public {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        uint256 secondProp = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -703,68 +718,72 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
             _emergency: false
         });
         vm.warp(block.timestamp + 1 days);
-        plugin.approve(1);
-        (, uint16 _approvals, , , , , , , ) = plugin.getProposal(1);
+        plugin.approve(secondProp);
+        (, uint16 _approvals, , , , , , , ) = plugin.getProposalByIndex(1);
         assertEq(_approvals, uint16(1));
     }
 
     function test_reverts_if_not_member() public {
         vm.startPrank(address(0x0));
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ApprovalCastForbidden.selector, 0, address(0x0))
+            abi.encodeWithSelector(
+                PolygonMultisig.ApprovalCastForbidden.selector,
+                proposalId,
+                address(0x0)
+            )
         );
-        plugin.approve(0);
+        plugin.approve(proposalId);
     }
 
     function test_reverts_if_already_approved() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ApprovalCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.approve(0);
+        plugin.approve(proposalId);
     }
 
     function test_reverts_if_proposal_already_executed() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
 
-        plugin.execute(0);
+        plugin.execute(proposalId);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ApprovalCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.approve(0);
+        plugin.approve(proposalId);
     }
 
     function test_reverts_if_proposal_already_executed_by_another_account() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
 
-        plugin.execute(0);
+        plugin.execute(proposalId);
         vm.stopPrank();
         vm.startPrank(address(0xdeaf));
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ApprovalCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xdeaf)
             )
         );
-        plugin.approve(0);
+        plugin.approve(proposalId);
     }
 
     function test_reverts_if_proposal_delay_already_started() public {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        uint256 secondProp = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -773,24 +792,24 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
             _endDate: uint64(block.timestamp + 2 days),
             _emergency: false
         });
-        plugin.approve(1);
-        plugin.startProposalDelay(1, bytes("ipfs://world"));
+        plugin.approve(secondProp);
+        plugin.startProposalDelay(secondProp, bytes("ipfs://world"));
         vm.stopPrank();
         vm.startPrank(address(0xdeaf));
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ApprovalCastForbidden.selector,
-                1,
+                secondProp,
                 address(0xdeaf)
             )
         );
-        plugin.approve(1);
+        plugin.approve(secondProp);
     }
 
     function test_reverts_if_proposal_ended() public {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        uint256 secondProp = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -803,20 +822,22 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ApprovalCastForbidden.selector,
-                1,
+                secondProp,
                 address(0xB0b)
             )
         );
-        plugin.approve(1);
+        plugin.approve(secondProp);
     }
 }
 
 contract PolygonMultisigConfirmations is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -829,83 +850,83 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
 
     function test_confirmation() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
-        plugin.confirm(0);
-        (, , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), true);
+        plugin.confirm(proposalId);
+        (, , , , , uint16 _confirmations, , , ) = plugin.getProposalByIndex(0);
         assertEq(_confirmations, uint16(1));
     }
 
     function test_reverts_if_double_confirmation() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_late_execution() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 2 days);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), false);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), false);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_too_early() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration - 1);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), false);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), false);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_no_member() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
         vm.startPrank(address(0xDad));
-        assertEq(plugin.canConfirm(0, address(0xDad)), false);
+        assertEq(plugin.canConfirm(proposalId, address(0xDad)), false);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xDad)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_proposal_not_approved() public {
@@ -913,68 +934,70 @@ contract PolygonMultisigConfirmations is PolygonMultisigTest {
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_proposal_already_executed() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
-        plugin.execute(0);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
         vm.stopPrank();
         vm.startPrank(address(0xdeaf));
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xdeaf)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_proposal_delay_not_started() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 
     function test_reverts_confirmation_if_proposal_delay_not_ended() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         vm.warp(block.timestamp + 0.5 days - 1);
         vm.expectRevert(
             abi.encodeWithSelector(
                 PolygonMultisig.ConfirmationCastForbidden.selector,
-                0,
+                proposalId,
                 address(0xB0b)
             )
         );
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
     }
 }
 
 contract PolygonMultisigExecution is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -987,76 +1010,78 @@ contract PolygonMultisigExecution is PolygonMultisigTest {
 
     function test_confirmation_and_execution() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
-        plugin.confirm(0);
-        (, , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), true);
+        plugin.confirm(proposalId);
+        (, , , , , uint16 _confirmations, , , ) = plugin.getProposalByIndex(0);
         assertEq(_confirmations, uint16(1));
-        plugin.execute(0);
-        (bool _executed, , , , , , , , ) = plugin.getProposal(0);
+        plugin.execute(proposalId);
+        (bool _executed, , , , , , , , ) = plugin.getProposalByIndex(0);
         assertEq(_executed, true);
     }
 
     // executes after a proposal has been approved
     function test_revert_execute_proposal_after_approving() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
+        plugin.approve(proposalId);
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_not_enough_approvals() public {
         vm.startPrank(address(0xB0b));
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_not_enough_confirmations() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), true);
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_confirmation_and_late_execution() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        assertEq(plugin.canConfirm(0, address(0xB0b)), true);
-        plugin.confirm(0);
-        (, , , , , uint16 _confirmations, , , ) = plugin.getProposal(0);
+        assertEq(plugin.canConfirm(proposalId, address(0xB0b)), true);
+        plugin.confirm(proposalId);
+        (, , , , , uint16 _confirmations, , , ) = plugin.getProposalByIndex(0);
         assertEq(_confirmations, uint16(1));
         vm.warp(block.timestamp + 2 days);
         vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, 0)
+            abi.encodeWithSelector(PolygonMultisig.ProposalExecutionForbidden.selector, proposalId)
         );
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 }
 
 contract PolygonMultisigGettersTest is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
         vm.prank(address(0xB0b));
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1078,8 +1103,7 @@ contract PolygonMultisigGettersTest is PolygonMultisigTest {
             bytes memory _metadata,
             bytes memory _secondaryMetadata,
             uint64 _firstDelayStartBlock
-        ) = plugin.getProposal(0);
-
+        ) = plugin.getProposalByIndex(0);
         assertEq(_executed, false);
         assertEq(_approvals, 0);
         assertEq(_parameters.minApprovals, uint64(1));
@@ -1100,6 +1124,8 @@ contract PolygonMultisigGettersTest is PolygonMultisigTest {
 }
 
 contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
     }
@@ -1117,7 +1143,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1127,12 +1153,12 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
-        plugin.execute(0);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
 
         assert(plugin.isMember(address(0xa11ce)));
     }
@@ -1150,7 +1176,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1160,12 +1186,12 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
-        plugin.execute(0);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
 
         assertEq(plugin.isMember(address(0xB0b)), false);
     }
@@ -1184,7 +1210,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1194,13 +1220,13 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_adding_too_many_members() public {
@@ -1218,7 +1244,7 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1228,17 +1254,19 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 }
 
 contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
+    uint256 proposalId;
+
     function setUp() public override {
         super.setUp();
     }
@@ -1261,7 +1289,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1271,12 +1299,12 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
-        plugin.execute(0);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
         (
             bool _onlyListed,
             uint16 _minApprovals,
@@ -1309,7 +1337,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1319,13 +1347,13 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_emergency_min_approvals_is_zero() public {
@@ -1346,7 +1374,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1356,13 +1384,13 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_min_approvals_is_higher_than_members() public {
@@ -1383,7 +1411,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1393,13 +1421,13 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_emergency_min_approvals_is_higher_than_members() public {
@@ -1420,7 +1448,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1430,13 +1458,13 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 
     function test_reverts_if_emergency_min_approvals_is_smaller_than_min_approvals() public {
@@ -1457,7 +1485,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         });
 
         vm.startPrank(address(0xB0b));
-        plugin.createProposal({
+        proposalId = plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 0,
@@ -1467,13 +1495,13 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
             _emergency: false
         });
 
-        plugin.approve(0);
-        plugin.startProposalDelay(0, bytes("ipfs://world"));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
         (, , , uint64 _delay, ) = plugin.multisigSettings();
         vm.warp(block.timestamp + _delay + 1);
-        plugin.confirm(0);
+        plugin.confirm(proposalId);
         vm.expectRevert();
-        plugin.execute(0);
+        plugin.execute(proposalId);
     }
 }
 
