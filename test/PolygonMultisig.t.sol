@@ -1196,6 +1196,39 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         assertEq(plugin.isMember(address(0xB0b)), false);
     }
 
+    function test_reverts_if_removals_are_lower_than_min_emergency_approvals() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        address[] memory _addresses = new address[](2);
+        _addresses[0] = address(0xB0b);
+        _addresses[1] = address(0xdeaf);
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.removeAddresses, _addresses)
+        });
+
+        vm.startPrank(address(0xB0b));
+        proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delayDuration + 1);
+        plugin.confirm(proposalId);
+        vm.expectRevert();
+        plugin.execute(proposalId);
+    }
+
     function test_reverts_if_removals_are_lower_than_min_approvals() public {
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
 

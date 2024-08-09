@@ -252,11 +252,12 @@ contract PolygonMultisig is
     ) external auth(UPDATE_MULTISIG_SETTINGS_PERMISSION_ID) {
         uint16 newAddresslistLength = uint16(addresslistLength() - _members.length);
 
-        // Check if the new address list length would become less than the current minimum number of approvals required.
-        if (newAddresslistLength < multisigSettings.minApprovals) {
+        // Check if the new address list length would become less than the current minimum number of emergency approvals required.
+        // Emeregency approvals are always higher or equal to the minimum approvals, so we only need to check the emergency approvals.
+        if (newAddresslistLength < multisigSettings.emergencyMinApprovals) {
             revert MinApprovalsOutOfBounds({
                 limit: newAddresslistLength,
-                actual: multisigSettings.minApprovals
+                actual: multisigSettings.emergencyMinApprovals
             });
         }
 
@@ -475,11 +476,7 @@ contract PolygonMultisig is
     /// @notice Returns the proposal id given its index.
     /// @param _proposalIndex The index of the proposal.
     /// @return The ID of the proposal.
-    function getProposalIdByIndex(uint256 _proposalIndex)
-        external
-        view
-        returns (uint256)
-    {
+    function getProposalIdByIndex(uint256 _proposalIndex) external view returns (uint256) {
         return proposalIndexToId[_proposalIndex];
     }
 
