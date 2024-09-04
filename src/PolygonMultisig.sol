@@ -313,8 +313,6 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: block.timestamp.toUint64(), actual: _startDate});
         }
 
-        // startDate + delayDuration + MIN_EXTRA_DURATION <= endDate
-
         if (
             _endDate < _startDate ||
             _startDate + multisigSettings.delayDuration + MIN_EXTRA_DURATION > _endDate
