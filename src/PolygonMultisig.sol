@@ -314,7 +314,6 @@ contract PolygonMultisig is
         }
 
         // startDate + delayDuration + MIN_EXTRA_DURATION <= endDate
-
         if (
             _endDate < _startDate ||
             _startDate + multisigSettings.delayDuration + MIN_EXTRA_DURATION > _endDate
@@ -322,14 +321,8 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: _startDate, actual: _endDate});
         }
 
-        uint256 proposalIndex = _createProposal({
-            _creator: _msgSender(),
-            _metadata: _metadata,
-            _startDate: _startDate,
-            _endDate: _endDate,
-            _actions: _actions,
-            _allowFailureMap: _allowFailureMap
-        });
+        // Get the proposal index
+        uint256 proposalIndex = _createProposalId();
 
         proposalId = uint256(
             keccak256(
@@ -375,6 +368,16 @@ contract PolygonMultisig is
         if (_approveProposal) {
             approve(proposalId);
         }
+
+        emit ProposalCreated({
+            proposalId: proposalId,
+            creator: msg.sender,
+            metadata: _metadata,
+            startDate: _startDate,
+            endDate: _endDate,
+            actions: _actions,
+            allowFailureMap: _allowFailureMap
+        });
     }
 
     /// @inheritdoc IMultisig
