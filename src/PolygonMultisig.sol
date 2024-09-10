@@ -22,9 +22,6 @@ contract PolygonMultisig is
 {
     using SafeCastUpgradeable for uint256;
 
-    /// @notice MIN_EXTRA_DURATION is the minimal extra duration for a proposal endTime for people to vote.
-    uint256 immutable MIN_EXTRA_DURATION = 0.5 days;
-
     /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
     uint256 immutable MIN_APPROVALS_THREEHOLDS = 1;
 
@@ -64,6 +61,7 @@ contract PolygonMultisig is
     /// @param emergency Whether the proposal is an emergency proposal or not.
     /// @param emergencyMinApprovals The number of approvals required for an emergency proposal.
     /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
+    /// @param minExtraDuration The minimal extra duration for a proposal endTime for people to vote.
     struct ProposalParameters {
         uint16 minApprovals;
         uint64 snapshotBlock;
@@ -74,6 +72,7 @@ contract PolygonMultisig is
         bool emergency;
         uint16 emergencyMinApprovals;
         bool memberOnlyProposalExecution;
+        uint256 minExtraDuration;
     }
 
     /// @notice A container for the plugin settings.
@@ -82,6 +81,7 @@ contract PolygonMultisig is
     /// @param emergencyMinApprovals The minimal number of approvals required for an emergency proposal to pass.
     /// @param delayDuration The duration of the delay.
     /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
+    /// @param minExtraDuration The minimal extra duration for a proposal endTime for people to vote.
     struct MultisigSettings {
         bool onlyListed;
         uint16 minApprovals;
@@ -89,6 +89,7 @@ contract PolygonMultisig is
         uint16 emergencyMinApprovals;
         uint64 delayDuration;
         bool memberOnlyProposalExecution;
+        uint256 minExtraDuration;
     }
 
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
@@ -188,7 +189,8 @@ contract PolygonMultisig is
         uint16 indexed minApprovals,
         uint16 emergencyMinApprovals,
         uint64 delayDuration,
-        bool memberOnlyProposalExecution
+        bool memberOnlyProposalExecution,
+        uint256 minExtraDuration
     );
 
     /// @notice Initializes Release 1, Build 1.
@@ -313,10 +315,11 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: block.timestamp.toUint64(), actual: _startDate});
         }
 
-        // startDate + delayDuration + MIN_EXTRA_DURATION <= endDate
+        // startDate + delayDuration + minExtraDuration <= endDate
         if (
             _endDate < _startDate ||
-            _startDate + multisigSettings.delayDuration + MIN_EXTRA_DURATION > _endDate
+            _startDate + multisigSettings.delayDuration + multisigSettings.minExtraDuration >
+            _endDate
         ) {
             revert DateOutOfBounds({limit: _startDate, actual: _endDate});
         }
@@ -352,6 +355,7 @@ contract PolygonMultisig is
         proposal_.parameters.delayDuration = multisigSettings.delayDuration;
         proposal_.parameters.memberOnlyProposalExecution = multisigSettings
             .memberOnlyProposalExecution;
+        proposal_.parameters.minExtraDuration = multisigSettings.minExtraDuration;
 
         // Reduce costs
         if (_allowFailureMap != 0) {
@@ -741,7 +745,8 @@ contract PolygonMultisig is
             minApprovals: _multisigSettings.minApprovals,
             emergencyMinApprovals: _multisigSettings.emergencyMinApprovals,
             delayDuration: _multisigSettings.delayDuration,
-            memberOnlyProposalExecution: _multisigSettings.memberOnlyProposalExecution
+            memberOnlyProposalExecution: _multisigSettings.memberOnlyProposalExecution,
+            minExtraDuration: _multisigSettings.minExtraDuration
         });
     }
 
