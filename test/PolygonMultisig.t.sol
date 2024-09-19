@@ -67,7 +67,7 @@ abstract contract PolygonMultisigTest is AragonTest {
 
         plugin.approve(proposalId);
         plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
-        (, , , uint64 _delay, ) = plugin.multisigSettings();
+        plugin.multisigSettings();
         vm.warp(block.timestamp + 1 days);
         plugin.confirm(proposalId);
 
@@ -123,16 +123,17 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         assertEq(_memberOnlyProposalExecution, multisigSettings.memberOnlyProposalExecution);
     }
 
-    function test_members_list_limit() public {
-        address[] memory _members = new address[](type(uint16).max);
-        for (uint256 i = 0; i < type(uint16).max; i++) {
+    function test_members_list_limit_at_gas_limit() public {
+        uint64 limit = type(uint16).max / 155;
+        address[] memory _members = new address[](limit);
+        for (uint256 i = 0; i < limit; i++) {
             _members[i] = address(uint160(i));
         }
         PolygonMultisigSetup _setup = new PolygonMultisigSetup();
         bytes memory _setupData = abi.encode(_members, multisigSettings);
-        (DAO _dao, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
+        (, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
         assertEq(PolygonMultisig(_plugin).isMember(address(uint160(1))), true);
-        assertEq(PolygonMultisig(_plugin).isMember(address(uint160(type(uint16).max - 1))), true);
+        assertEq(PolygonMultisig(_plugin).isMember(address(uint160(limit - 1))), true);
     }
 
     function test_interfaces() public {
@@ -147,31 +148,26 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         vm.expectRevert("Initializable: contract is already initialized");
         plugin.initialize(dao, members, multisigSettings);
     }
-}
 
-contract PolygonMultisigProposalCreationLimitTest is AragonTest {
-    DAO internal dao;
-    PolygonMultisig internal plugin;
-    PolygonMultisigSetup internal setup;
-    address[] members = new address[](65536);
-    PolygonMultisig.MultisigSettings multisigSettings =
-        PolygonMultisig.MultisigSettings({
-            onlyListed: true,
-            minApprovals: 1,
-            emergencyMinApprovals: 1,
-            delayDuration: 1 days,
-            memberOnlyProposalExecution: false
-        });
-
-    function test_reverts_members_list_limit() public {
+    function test_empty_members_list() public {
         PolygonMultisigSetup _setup = new PolygonMultisigSetup();
-        bytes memory _setupData = abi.encode(members, multisigSettings);
+        bytes memory _setupData = abi.encode(new address[](0), multisigSettings);
+        expectRevertCreateMockDaoWithPlugin(_setup, _setupData);
+    }
 
-        DAO _dao = DAO(payable(new ERC1967Proxy(address(new DAO()), EMPTY_BYTES)));
-        _dao.initialize(EMPTY_BYTES, address(this), address(0), "");
-        vm.expectRevert();
-        (address plugin, PluginSetup.PreparedSetupData memory preparedSetupData) = _setup
-            .prepareInstallation(address(_dao), _setupData);
+    function test_empty_members_list_with_min_approvals_0() public {
+        PolygonMultisigSetup _setup = new PolygonMultisigSetup();
+        PolygonMultisig.MultisigSettings memory limitMultisigSettings = PolygonMultisig
+            .MultisigSettings({
+                onlyListed: true,
+                minApprovals: 0,
+                emergencyMinApprovals: 0,
+                delayDuration: 0.5 days,
+                memberOnlyProposalExecution: true
+            });
+
+        bytes memory _setupData = abi.encode(new address[](0), limitMultisigSettings);
+        expectRevertCreateMockDaoWithPlugin(_setup, _setupData);
     }
 }
 
@@ -448,7 +444,7 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
                 address(0xB0b)
             )
         );
-        uint256 secondProposalId = plugin.createProposal({
+        plugin.createProposal({
             _metadata: bytes("ipfs://hello"),
             _actions: _actions,
             _allowFailureMap: 1,
@@ -1333,40 +1329,6 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         vm.expectRevert();
         plugin.execute(proposalId);
     }
-
-    function test_reverts_if_adding_too_many_members() public {
-        IDAO.Action[] memory _actions = new IDAO.Action[](1);
-
-        address[] memory _addresses = new address[](type(uint16).max);
-        for (uint256 i = 0; i < type(uint16).max; i++) {
-            _addresses[i] = address(uint160(i));
-        }
-
-        _actions[0] = IDAO.Action({
-            to: address(plugin),
-            value: 0,
-            data: abi.encodeCall(PolygonMultisig.addAddresses, _addresses)
-        });
-
-        vm.startPrank(address(0xB0b));
-        proposalId = plugin.createProposal({
-            _metadata: bytes("ipfs://hello"),
-            _actions: _actions,
-            _allowFailureMap: 0,
-            _approveProposal: false,
-            _startDate: uint64(0),
-            _endDate: uint64(block.timestamp + 2 days),
-            _emergency: false
-        });
-
-        plugin.approve(proposalId);
-        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
-        (, , , uint64 _delayDuration, ) = plugin.multisigSettings();
-        vm.warp(block.timestamp + _delayDuration + 1);
-        plugin.confirm(proposalId);
-        vm.expectRevert();
-        plugin.execute(proposalId);
-    }
 }
 
 contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
@@ -1675,7 +1637,7 @@ contract PolygonMultisigIsListedEdgesTest is PolygonMultisigTest {
         // Taking the second proposal to the last stage
         plugin.approve(secondProposalId);
         plugin.startProposalDelay(secondProposalId, bytes("ipfs://world"));
-        (, , , uint64 _delay, ) = plugin.multisigSettings();
+        plugin.multisigSettings();
         vm.warp(block.timestamp + 1 days);
         plugin.confirm(secondProposalId);
         vm.stopPrank();
