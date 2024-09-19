@@ -340,11 +340,17 @@ contract PolygonMultisig is
             )
         );
 
+        Proposal storage proposal_ = proposals[proposalId];
+
+        // Checking the proposalId is not already in use
+        if (proposal_.parameters.snapshotBlock != 0) {
+            revert ProposalCreationForbidden(_msgSender());
+        }
+
         // Index the proposal id by its count
         proposalIndexToId[proposalIndex] = proposalId;
 
         // Create the proposal
-        Proposal storage proposal_ = proposals[proposalId];
         proposal_.metadata = _metadata;
 
         proposal_.parameters.snapshotBlock = snapshotBlock;

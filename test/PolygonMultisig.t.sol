@@ -394,6 +394,78 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
     }
+
+    function test_different_proposal_creation_within_same_block() public {
+        vm.startPrank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        uint256 proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+        plugin.createProposal({
+            _metadata: bytes("ipfs://second-hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+        assertEq(plugin.proposalCount(), 2);
+        assertEq(
+            proposalId,
+            uint256(
+                keccak256(abi.encode(address(0xB0b), bytes("ipfs://hello"), _actions, block.number))
+            )
+        );
+        assertEq(plugin.getProposalIdByIndex(0), proposalId);
+    }
+
+    function test_reverts_if_same_double_proposal_creation_within_same_block() public {
+        vm.startPrank(address(0xB0b));
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        uint256 proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PolygonMultisig.ProposalCreationForbidden.selector,
+                address(0xB0b)
+            )
+        );
+        uint256 secondProposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 1,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 1 days),
+            _emergency: false
+        });
+        assertEq(plugin.proposalCount(), 1);
+        assertEq(
+            proposalId,
+            uint256(
+                keccak256(abi.encode(address(0xB0b), bytes("ipfs://hello"), _actions, block.number))
+            )
+        );
+        assertEq(plugin.getProposalIdByIndex(0), proposalId);
+    }
 }
 
 contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
@@ -443,7 +515,7 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
         plugin.createProposal({
-            _metadata: bytes("ipfs://hello"),
+            _metadata: bytes("ipfs://second-hello"),
             _actions: _actions,
             _allowFailureMap: 1,
             _approveProposal: false,
@@ -709,7 +781,7 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
         uint256 secondProp = plugin.createProposal({
-            _metadata: bytes("ipfs://hello"),
+            _metadata: bytes("ipfs://second-hello"),
             _actions: _actions,
             _allowFailureMap: 0,
             _approveProposal: false,
@@ -784,7 +856,7 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
         uint256 secondProp = plugin.createProposal({
-            _metadata: bytes("ipfs://hello"),
+            _metadata: bytes("ipfs://second-hello"),
             _actions: _actions,
             _allowFailureMap: 0,
             _approveProposal: false,
@@ -810,7 +882,7 @@ contract PolygonMultisigApprovals is PolygonMultisigTest {
         vm.startPrank(address(0xB0b));
         IDAO.Action[] memory _actions = new IDAO.Action[](0);
         uint256 secondProp = plugin.createProposal({
-            _metadata: bytes("ipfs://hello"),
+            _metadata: bytes("ipfs://second-hello"),
             _actions: _actions,
             _allowFailureMap: 0,
             _approveProposal: false,
