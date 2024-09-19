@@ -25,8 +25,8 @@ contract PolygonMultisig is
     /// @notice MIN_EXTRA_DURATION is the minimal extra duration for a proposal endTime for people to vote.
     uint256 immutable MIN_EXTRA_DURATION = 0.5 days;
 
-    /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
-    uint256 immutable MIN_APPROVALS_THREEHOLDS = 1;
+    /// @notice MIN_APPROVALS_THREESHOLDS is the minimal number of approvals required for a proposal to pass.
+    uint256 immutable MIN_APPROVALS_THREESHOLDS = 1;
 
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
@@ -202,6 +202,9 @@ contract PolygonMultisig is
         MultisigSettings calldata _multisigSettings
     ) external initializer {
         __PluginUUPSUpgradeable_init(_dao);
+        __Context_init_unchained();
+        __UUPSUpgradeable_init();
+        __ERC165_init();
 
         if (_members.length > type(uint16).max) {
             revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: _members.length});
@@ -728,8 +731,8 @@ contract PolygonMultisig is
         }
 
         if (
-            _multisigSettings.minApprovals < MIN_APPROVALS_THREEHOLDS ||
-            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREEHOLDS
+            _multisigSettings.minApprovals < MIN_APPROVALS_THREESHOLDS ||
+            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREESHOLDS
         ) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
