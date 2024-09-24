@@ -99,7 +99,8 @@ contract PolygonMultisigScript is Script {
                 minApprovals: 1,
                 emergencyMinApprovals: 1,
                 delayDuration: 1 days,
-                memberOnlyProposalExecution: false
+                memberOnlyProposalExecution: false,
+                minExtraDuration: 0.5 days
             });
         bytes memory pluginSettingsData = abi.encode(members, multisigSettings);
 
