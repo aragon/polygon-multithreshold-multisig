@@ -154,10 +154,10 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
     }
 
     function test_empty_members_list() public {
-      PolygonMultisigSetup _setup = new PolygonMultisigSetup();
+        PolygonMultisigSetup _setup = new PolygonMultisigSetup();
         bytes memory _setupData = abi.encode(new address[](0), multisigSettings);
         expectRevertCreateMockDaoWithPlugin(_setup, _setupData);
-     }
+    }
 
     function test_empty_members_list_with_min_approvals_0() public {
         PolygonMultisigSetup _setup = new PolygonMultisigSetup();
@@ -167,7 +167,8 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
                 minApprovals: 0,
                 emergencyMinApprovals: 0,
                 delayDuration: 0.5 days,
-                memberOnlyProposalExecution: true
+                memberOnlyProposalExecution: true,
+                minExtraDuration: 0.5 days
             });
 
         bytes memory _setupData = abi.encode(new address[](0), limitMultisigSettings);
@@ -496,10 +497,12 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         );
         assertEq(plugin.getProposalIdByIndex(0), proposalId);
     }
-    
-    function test_reverts_if_end_date_less_than_start_date_plus_delay_duration_and_min_extra_duration() public {
+
+    function test_reverts_if_end_date_less_than_start_date_plus_delay_duration_and_min_extra_duration()
+        public
+    {
         vm.prank(address(0xB0b));
-        
+
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
@@ -1718,7 +1721,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         assertEq(_minExtraDuration, 5 days);
     }
 
-      function test_remove_min_extra_duration_by_setting_to_zero() public {
+    function test_remove_min_extra_duration_by_setting_to_zero() public {
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
 
         PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({

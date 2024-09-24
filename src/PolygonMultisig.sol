@@ -23,7 +23,7 @@ contract PolygonMultisig is
     using SafeCastUpgradeable for uint256;
 
     /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
-    uint256 immutable MIN_APPROVALS_THREEHOLDS = 1;
+    uint256 immutable MIN_APPROVALS_THREESHOLDS = 1;
 
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
