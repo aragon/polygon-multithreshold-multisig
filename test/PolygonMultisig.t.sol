@@ -402,6 +402,25 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
             _emergency: false
         });
     }
+
+    function test_reverts_if_end_date_less_than_start_date_plus_delay_duration_and_min_extra_duration() public {
+        vm.prank(address(0xB0b));
+        
+        IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+        _actions[0] = _action;
+        vm.expectRevert();
+
+        plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 0.5 days + 0.2 days),
+            _emergency: false
+        });
+    }
 }
 
 contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
@@ -1603,6 +1622,58 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         assertEq(_delayDuration, 0.5 days);
         assertEq(_memberOnlyProposalExecution, true);
         assertEq(_minExtraDuration, 5 days);
+    }
+
+      function test_remove_min_extra_duration_by_setting_to_zero() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            emergencyMinApprovals: 1,
+            delayDuration: 0.5 days,
+            memberOnlyProposalExecution: true,
+            minExtraDuration: 0 days
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , uint64 _delay, , ) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
+        (
+            bool _onlyListed,
+            uint16 _minApprovals,
+            uint16 _emergencyMinApprovals,
+            uint64 _delayDuration,
+            bool _memberOnlyProposalExecution,
+            uint256 _minExtraDuration
+        ) = plugin.multisigSettings();
+
+        assertEq(_onlyListed, true);
+        assertEq(_minApprovals, 1);
+        assertEq(_emergencyMinApprovals, 1);
+        assertEq(_delayDuration, 0.5 days);
+        assertEq(_memberOnlyProposalExecution, true);
+        assertEq(_minExtraDuration, 0 days);
     }
 }
 
