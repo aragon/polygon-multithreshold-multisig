@@ -1552,6 +1552,58 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         vm.expectRevert();
         plugin.execute(proposalId);
     }
+
+    function test_change_min_extra_duration() public {
+        IDAO.Action[] memory _actions = new IDAO.Action[](1);
+
+        PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
+            onlyListed: true,
+            minApprovals: 1,
+            emergencyMinApprovals: 1,
+            delayDuration: 0.5 days,
+            memberOnlyProposalExecution: true,
+            minExtraDuration: 5 days
+        });
+
+        _actions[0] = IDAO.Action({
+            to: address(plugin),
+            value: 0,
+            data: abi.encodeCall(PolygonMultisig.updateMultisigSettings, _settings)
+        });
+
+        vm.startPrank(address(0xB0b));
+        proposalId = plugin.createProposal({
+            _metadata: bytes("ipfs://hello"),
+            _actions: _actions,
+            _allowFailureMap: 0,
+            _approveProposal: false,
+            _startDate: uint64(0),
+            _endDate: uint64(block.timestamp + 2 days),
+            _emergency: false
+        });
+
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        (, , , uint64 _delay, , ) = plugin.multisigSettings();
+        vm.warp(block.timestamp + _delay + 1);
+        plugin.confirm(proposalId);
+        plugin.execute(proposalId);
+        (
+            bool _onlyListed,
+            uint16 _minApprovals,
+            uint16 _emergencyMinApprovals,
+            uint64 _delayDuration,
+            bool _memberOnlyProposalExecution,
+            uint256 _minExtraDuration
+        ) = plugin.multisigSettings();
+
+        assertEq(_onlyListed, true);
+        assertEq(_minApprovals, 1);
+        assertEq(_emergencyMinApprovals, 1);
+        assertEq(_delayDuration, 0.5 days);
+        assertEq(_memberOnlyProposalExecution, true);
+        assertEq(_minExtraDuration, 5 days);
+    }
 }
 
 contract PolygonMultisigIsListedEdgesTest is PolygonMultisigTest {
