@@ -68,7 +68,7 @@ abstract contract PolygonMultisigTest is AragonTest {
 
         plugin.approve(proposalId);
         plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
-        (, , , uint64 _delay, , ) = plugin.multisigSettings();
+        plugin.multisigSettings();
         vm.warp(block.timestamp + 1 days);
         plugin.confirm(proposalId);
 
@@ -134,7 +134,7 @@ contract PolygonMultisigInitializeTest is PolygonMultisigTest {
         }
         PolygonMultisigSetup _setup = new PolygonMultisigSetup();
         bytes memory _setupData = abi.encode(_members, multisigSettings);
-        (DAO _dao, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
+        (, address _plugin) = createMockDaoWithPlugin(_setup, _setupData);
         assertEq(PolygonMultisig(_plugin).isMember(address(uint160(1))), true);
         assertEq(PolygonMultisig(_plugin).isMember(address(uint160(type(uint16).max - 1))), true);
     }
@@ -175,8 +175,7 @@ contract PolygonMultisigProposalCreationLimitTest is AragonTest {
         DAO _dao = DAO(payable(new ERC1967Proxy(address(new DAO()), EMPTY_BYTES)));
         _dao.initialize(EMPTY_BYTES, address(this), address(0), "");
         vm.expectRevert();
-        (address plugin, PluginSetup.PreparedSetupData memory preparedSetupData) = _setup
-            .prepareInstallation(address(_dao), _setupData);
+        _setup.prepareInstallation(address(_dao), _setupData);
     }
 }
 
@@ -403,9 +402,11 @@ contract PolygonMultisigProposalCreationTest is PolygonMultisigTest {
         });
     }
 
-    function test_reverts_if_end_date_less_than_start_date_plus_delay_duration_and_min_extra_duration() public {
+    function test_reverts_if_end_date_less_than_start_date_plus_delay_duration_and_min_extra_duration()
+        public
+    {
         vm.prank(address(0xB0b));
-        
+
         IDAO.Action memory _action = IDAO.Action({to: address(0x0), value: 0, data: bytes("0x00")});
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
         _actions[0] = _action;
@@ -1624,7 +1625,7 @@ contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
         assertEq(_minExtraDuration, 5 days);
     }
 
-      function test_remove_min_extra_duration_by_setting_to_zero() public {
+    function test_remove_min_extra_duration_by_setting_to_zero() public {
         IDAO.Action[] memory _actions = new IDAO.Action[](1);
 
         PolygonMultisig.MultisigSettings memory _settings = PolygonMultisig.MultisigSettings({
@@ -1742,7 +1743,7 @@ contract PolygonMultisigIsListedEdgesTest is PolygonMultisigTest {
         // Taking the second proposal to the last stage
         plugin.approve(secondProposalId);
         plugin.startProposalDelay(secondProposalId, bytes("ipfs://world"));
-        (, , , uint64 _delay, , ) = plugin.multisigSettings();
+        plugin.multisigSettings();
         vm.warp(block.timestamp + 1 days);
         plugin.confirm(secondProposalId);
         vm.stopPrank();
