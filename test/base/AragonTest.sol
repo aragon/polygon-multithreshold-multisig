@@ -29,6 +29,26 @@ contract AragonTest is Test {
         return (_dao, plugin);
     }
 
+    /// @notice Expects failure when creating a mock DAO with a plugin.
+    /// @param setup The plugin setup interface.
+    /// @param setupData The setup data in bytes.
+    /// @return A tuple containing the DAO and the address of the plugin.
+    function expectRevertCreateMockDaoWithPlugin(
+        IPluginSetup setup,
+        bytes memory setupData
+    ) internal returns (DAO, address) {
+        DAO _dao = DAO(payable(new ERC1967Proxy(address(new DAO()), EMPTY_BYTES)));
+        _dao.initialize(EMPTY_BYTES, address(this), address(0), "");
+
+        vm.expectRevert();
+        (address plugin, PluginSetup.PreparedSetupData memory preparedSetupData) = setup
+            .prepareInstallation(address(_dao), setupData);
+
+        _dao.applyMultiTargetPermissions(preparedSetupData.permissions);
+
+        return (_dao, plugin);
+    }
+
     /// @notice Returns the address associated with a given label.
     /// @param label The label to get the address for.
     /// @return addr The address associated with the label.

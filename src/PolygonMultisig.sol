@@ -23,7 +23,7 @@ contract PolygonMultisig is
     using SafeCastUpgradeable for uint256;
 
     /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
-    uint256 immutable MIN_APPROVALS_THREEHOLDS = 1;
+    uint256 immutable MIN_APPROVALS_THREESHOLDS = 1;
 
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
@@ -335,11 +335,15 @@ contract PolygonMultisig is
         );
 
         {
+            Proposal storage proposal_ = proposals[proposalId];
+            // Checking the proposalId is not already in use
+            if (proposal_.parameters.snapshotBlock != 0) {
+                revert ProposalCreationForbidden(_msgSender());
+            }
             // Index the proposal id by its count
             proposalIndexToId[_createProposalId()] = proposalId;
 
             // Create the proposal
-            Proposal storage proposal_ = proposals[proposalId];
             proposal_.metadata = _metadata;
 
             proposal_.parameters.snapshotBlock = snapshotBlock;
@@ -728,8 +732,8 @@ contract PolygonMultisig is
         }
 
         if (
-            _multisigSettings.minApprovals < MIN_APPROVALS_THREEHOLDS ||
-            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREEHOLDS
+            _multisigSettings.minApprovals < MIN_APPROVALS_THREESHOLDS ||
+            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREESHOLDS
         ) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
