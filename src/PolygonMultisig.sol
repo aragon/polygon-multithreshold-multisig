@@ -326,9 +326,6 @@ contract PolygonMultisig is
             revert DateOutOfBounds({limit: _startDate, actual: _endDate});
         }
 
-        // Get the proposal index
-        uint256 proposalIndex = _createProposalId();
-
         proposalId = uint256(
             keccak256(
                 abi.encode(
@@ -340,40 +337,39 @@ contract PolygonMultisig is
             )
         );
 
-        Proposal storage proposal_ = proposals[proposalId];
+        {
+            Proposal storage proposal_ = proposals[proposalId];
+            // Checking the proposalId is not already in use
+            if (proposal_.parameters.snapshotBlock != 0) {
+                revert ProposalCreationForbidden(_msgSender());
+            }
+            // Index the proposal id by its count
+            proposalIndexToId[_createProposalId()] = proposalId;
 
-        // Checking the proposalId is not already in use
-        if (proposal_.parameters.snapshotBlock != 0) {
-            revert ProposalCreationForbidden(_msgSender());
-        }
+            // Create the proposal
+            proposal_.metadata = _metadata;
 
-        // Index the proposal id by its count
-        proposalIndexToId[proposalIndex] = proposalId;
+            proposal_.parameters.snapshotBlock = snapshotBlock;
+            proposal_.parameters.startDate = _startDate;
+            proposal_.parameters.endDate = _endDate;
+            proposal_.parameters.minApprovals = multisigSettings.minApprovals;
+            proposal_.parameters.emergency = _emergency;
+            proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;
+            proposal_.parameters.delayDuration = multisigSettings.delayDuration;
+            proposal_.parameters.memberOnlyProposalExecution = multisigSettings
+                .memberOnlyProposalExecution;
+            proposal_.parameters.minExtraDuration = multisigSettings.minExtraDuration;
 
-        // Create the proposal
-        proposal_.metadata = _metadata;
+            // Reduce costs
+            if (_allowFailureMap != 0) {
+                proposal_.allowFailureMap = _allowFailureMap;
+            }
 
-        proposal_.parameters.snapshotBlock = snapshotBlock;
-        proposal_.parameters.startDate = _startDate;
-        proposal_.parameters.endDate = _endDate;
-        proposal_.parameters.minApprovals = multisigSettings.minApprovals;
-        // setting the new data
-        proposal_.parameters.emergency = _emergency;
-        proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;
-        proposal_.parameters.delayDuration = multisigSettings.delayDuration;
-        proposal_.parameters.memberOnlyProposalExecution = multisigSettings
-            .memberOnlyProposalExecution;
-        proposal_.parameters.minExtraDuration = multisigSettings.minExtraDuration;
-
-        // Reduce costs
-        if (_allowFailureMap != 0) {
-            proposal_.allowFailureMap = _allowFailureMap;
-        }
-
-        for (uint256 i; i < _actions.length; ) {
-            proposal_.actions.push(_actions[i]);
-            unchecked {
-                ++i;
+            for (uint256 i; i < _actions.length; ) {
+                proposal_.actions.push(_actions[i]);
+                unchecked {
+                    ++i;
+                }
             }
         }
 
@@ -383,7 +379,7 @@ contract PolygonMultisig is
 
         emit ProposalCreated({
             proposalId: proposalId,
-            creator: msg.sender,
+            creator: _msgSender(),
             metadata: _metadata,
             startDate: _startDate,
             endDate: _endDate,
