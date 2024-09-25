@@ -204,9 +204,6 @@ contract PolygonMultisig is
         MultisigSettings calldata _multisigSettings
     ) external initializer {
         __PluginUUPSUpgradeable_init(_dao);
-        __Context_init_unchained();
-        __UUPSUpgradeable_init();
-        __ERC165_init();
 
         if (_members.length > type(uint16).max) {
             revert AddresslistLengthOutOfBounds({limit: type(uint16).max, actual: _members.length});
