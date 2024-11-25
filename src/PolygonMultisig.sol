@@ -103,6 +103,10 @@ contract PolygonMultisig is
     bytes32 public constant UPDATE_MULTISIG_SETTINGS_PERMISSION_ID =
         keccak256("UPDATE_MULTISIG_SETTINGS_PERMISSION");
 
+    /// @notice The ID of the permission required to call the `setSecondaryMetadata` function.
+    bytes32 public constant SET_SECONDARY_METADATA_PERMISSION_ID =
+        keccak256("SET_SECONDARY_METADATA_PERMISSION");
+
     /// @notice A mapping between proposal IDs and proposal information.
     mapping(uint256 => Proposal) internal proposals;
 
@@ -558,26 +562,10 @@ contract PolygonMultisig is
             revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);
         }
 
-        _setSecondaryMetadata(proposal_, _secondaryMetadata);
+        setSecondaryMetadata(_proposalId, _secondaryMetadata);
 
         proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();
         emit ProposalDelayStarted(_proposalId, _secondaryMetadata);
-    }
-
-    /// @notice Allows to set the secondary metadata of an emergency proposal at any point in time.
-    /// @param _proposalId The ID of the proposal.
-    /// @param _secondaryMetadata The secondary metadata of the proposal.
-    function setEmergencySecondaryMetadata(
-        uint256 _proposalId,
-        bytes calldata _secondaryMetadata
-    ) external {
-        Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
-
-        if (proposal_.executed || !proposal_.parameters.emergency) {
-            revert MetadataCantBeSet();
-        }
-
-        _setSecondaryMetadata(proposal_, _secondaryMetadata);
     }
 
     /// @inheritdoc IMultisig
@@ -752,14 +740,16 @@ contract PolygonMultisig is
     }
 
     /// @notice Allows to set the secondary metadata of a proposal.
-    /// @param proposal_ The proposal to be changed.
+    /// @param _proposalId The id of the proposal to be changed.
     /// @param _secondaryMetadata The secondary metadata of the proposal.
-    function _setSecondaryMetadata(
-        Proposal storage proposal_,
+    function setSecondaryMetadata(
+        uint256 _proposalId,
         bytes calldata _secondaryMetadata
-    ) internal {
-        if (proposal_.secondaryMetadata.length != 0) {
-            revert SecondaryMetadataAlreadySet();
+    ) public auth(SET_SECONDARY_METADATA_PERMISSION_ID) {
+        Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
+
+        if (proposal_.executed) {
+            revert MetadataCantBeSet();
         }
 
         proposal_.secondaryMetadata = _secondaryMetadata;

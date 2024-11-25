@@ -35,7 +35,7 @@ abstract contract PolygonMultisigTest is AragonTest {
     function setUp() public virtual {
         vm.prank(address(0xB0b));
         setup = new PolygonMultisigSetup();
-        bytes memory setupData = abi.encode(members, multisigSettings);
+        bytes memory setupData = abi.encode(members, multisigSettings, address(0xB0b));
 
         (DAO _dao, address _plugin) = createMockDaoWithPlugin(setup, setupData);
 
@@ -96,7 +96,7 @@ abstract contract PolygonMultisigExtraMembersTest is AragonTest {
     function setUp() public virtual {
         vm.prank(address(0xB0b));
         setup = new PolygonMultisigSetup();
-        bytes memory setupData = abi.encode(members, multisigSettings);
+        bytes memory setupData = abi.encode(members, multisigSettings, address(0xB0b));
 
         (DAO _dao, address _plugin) = createMockDaoWithPlugin(setup, setupData);
 
@@ -597,13 +597,6 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
     }
 
-    function test_reverts_if_emergency_metadata_called() public {
-        vm.startPrank(address(0xB0b));
-        plugin.approve(proposalId);
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
-    }
-
     function test_reverts_if_not_enough_approvals() public {
         vm.startPrank(address(0xB0b));
         vm.expectRevert(
@@ -662,7 +655,7 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
 
     function test_emergency_can_set_metadata_before() public {
         vm.startPrank(address(0xB0b));
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
         (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
@@ -670,9 +663,26 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
     function test_emergency_can_set_metadata_after() public {
         vm.startPrank(address(0xB0b));
         plugin.approve(proposalId);
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
         (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_setting_metadata_after_execution() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(proposalId);
+        assertEq(plugin.canExecute(proposalId), true);
+        plugin.execute(proposalId);
+        (bool _executed, , , , , , , , ) = plugin.getProposal(proposalId);
+        assertEq(_executed, true);
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
+    }
+
+    function test_reverts_if_not_member_setting_metadata() public {
+        vm.startPrank(address(0x0));
+        vm.expectRevert();
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
     function test_reverts_if_not_enough_approvals_in_emergency() public {
@@ -683,29 +693,12 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
         plugin.execute(proposalId);
     }
 
-    function test_reverts_if_emergency_metadata_after_execution() public {
+    function test_if_emergency_metadata_already_set() public {
         vm.startPrank(address(0xB0b));
-        plugin.approve(proposalId);
-        plugin.execute(proposalId);
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
-    }
-
-    function test_reverts_if_emergency_metadata_already_set() public {
-        vm.startPrank(address(0xB0b));
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
-        vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.SecondaryMetadataAlreadySet.selector)
-        );
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
-    }
-
-    function test_reverts_if_emergency_metadata_after_delay() public {
-        vm.startPrank(address(0xB0b));
-        plugin.approve(proposalId);
-        vm.warp(block.timestamp + 3 days);
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
-        plugin.setEmergencySecondaryMetadata(proposalId, bytes("ipfs://world"));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://hello"));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
     function test_revert_execute_proposal_when_no_member() public {
@@ -1358,7 +1351,6 @@ contract PolygonMultisigChangeMembersTest is PolygonMultisigTest {
         vm.expectRevert();
         plugin.execute(proposalId);
     }
-
 }
 
 contract PolygonMultisigChangeSettingsTest is PolygonMultisigTest {
