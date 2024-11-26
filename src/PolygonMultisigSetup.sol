@@ -26,8 +26,11 @@ contract PolygonMultisigSetup is PluginSetup {
         bytes calldata _data
     ) external returns (address plugin, PreparedSetupData memory preparedSetupData) {
         // Decode `_data` to extract the params needed for deploying and initializing `Multisig` plugin.
-        (address[] memory members, PolygonMultisig.MultisigSettings memory multisigSettings) = abi
-            .decode(_data, (address[], PolygonMultisig.MultisigSettings));
+        (
+            address[] memory members,
+            PolygonMultisig.MultisigSettings memory multisigSettings,
+            address secondaryMetadataAdmin
+        ) = abi.decode(_data, (address[], PolygonMultisig.MultisigSettings, address));
 
         // Prepare and Deploy the plugin proxy.
         plugin = createERC1967Proxy(
@@ -42,7 +45,7 @@ contract PolygonMultisigSetup is PluginSetup {
 
         // Prepare permissions
         PermissionLib.MultiTargetPermission[]
-            memory permissions = new PermissionLib.MultiTargetPermission[](3);
+            memory permissions = new PermissionLib.MultiTargetPermission[](4);
 
         // Set permissions to be granted.
         // Grant the list of permissions of the plugin to the DAO.
@@ -69,6 +72,14 @@ contract PolygonMultisigSetup is PluginSetup {
             plugin,
             PermissionLib.NO_CONDITION,
             DAO(payable(_dao)).EXECUTE_PERMISSION_ID()
+        );
+
+        permissions[3] = PermissionLib.MultiTargetPermission(
+            PermissionLib.Operation.Grant,
+            plugin,
+            secondaryMetadataAdmin,
+            PermissionLib.NO_CONDITION,
+            multisigBase.SET_SECONDARY_METADATA_PERMISSION_ID()
         );
 
         preparedSetupData.permissions = permissions;

@@ -17,11 +17,13 @@ contract PolygonMultisigScript is Script {
     DAOFactory daoFactory;
     string nameWithEntropy;
     address[] pluginAddress;
+    address secondaryMetadataAdmin;
 
     function setUp() public {
         pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
         daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
         nameWithEntropy = string.concat("polygon-multisig-", vm.toString(block.timestamp));
+        secondaryMetadataAdmin = vm.envAddress("SECONDARY_METADATA_ADMIN");
     }
 
     function run() public {
@@ -102,7 +104,11 @@ contract PolygonMultisigScript is Script {
                 memberOnlyProposalExecution: false,
                 minExtraDuration: 0.5 days
             });
-        bytes memory pluginSettingsData = abi.encode(members, multisigSettings);
+        bytes memory pluginSettingsData = abi.encode(
+            members,
+            multisigSettings,
+            secondaryMetadataAdmin
+        );
 
         PluginRepo.Tag memory tag = PluginRepo.Tag(1, 1);
         pluginSettings = new DAOFactory.PluginSettings[](1);
