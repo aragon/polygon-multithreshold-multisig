@@ -679,7 +679,7 @@ contract PolygonMultisigEmergencyFlows is PolygonMultisigTest {
         plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
     }
 
-    function test_reverts_if_not_member_setting_metadata() public {
+    function test_reverts_if_not_address_doesnt_have_permission_setting_metadata() public {
         vm.startPrank(address(0x0));
         vm.expectRevert();
         plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
