@@ -522,6 +522,15 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         assertEq(_secondaryMetadata, bytes("ipfs://world"));
     }
 
+    function test_set_secondary_metadata_after_delay_duration() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(proposalId);
+        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://universe"));
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://universe"));
+    }
+
     function test_delay_lasts_the_defined_amount() public {
         vm.startPrank(address(0xB0b));
         plugin.approve(proposalId);
@@ -579,14 +588,6 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
             abi.encodeWithSelector(PolygonMultisig.NotInMemberList.selector, address(0x0))
         );
         plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
-    }
-
-    function test_reverts_if_metadata_was_already_set() public {
-        vm.startPrank(address(0xB0b));
-        plugin.approve(proposalId);
-        plugin.startProposalDelay(proposalId, bytes("ipfs://world"));
-        vm.expectRevert(PolygonMultisig.MetadataCantBeSet.selector);
-        plugin.startProposalDelay(proposalId, bytes("ipfs://failure"));
     }
 
     function test_reverts_if_delay_started_after_end_date() public {
