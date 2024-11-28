@@ -538,10 +538,7 @@ contract PolygonMultisig is
             revert NotInMemberList(_msgSender());
         }
 
-        if (
-            proposal_.firstDelayStartTimestamp != 0 ||
-            uint64(proposal_.parameters.endDate) < currentTimestamp64
-        ) {
+        if (uint64(proposal_.parameters.endDate) < currentTimestamp64) {
             revert MetadataCantBeSet();
         }
 
