@@ -24,6 +24,7 @@ contract PolygonMultisig is
 
     /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
     uint256 immutable MIN_APPROVALS_THREESHOLDS = 1;
+    uint256 immutable MIN_CONFIRMATIONS_THREESHOLDS = 1;
 
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
@@ -44,7 +45,6 @@ contract PolygonMultisig is
         mapping(address => bool) approvers;
         IDAO.Action[] actions;
         uint256 allowFailureMap;
-        // New data
         uint16 confirmations;
         mapping(address => bool) confirmation_approvers;
         bytes metadata;
@@ -54,6 +54,7 @@ contract PolygonMultisig is
 
     /// @notice A container for the proposal parameters.
     /// @param minApprovals The number of approvals required.
+    /// @param minConfirmations The number of approvals required.
     /// @param snapshotBlock The number of the block prior to the proposal creation.
     /// @param startDate The timestamp when the proposal starts.
     /// @param endDate The timestamp when the proposal expires.
@@ -64,10 +65,10 @@ contract PolygonMultisig is
     /// @param minExtraDuration The minimal extra duration for a proposal endTime for people to vote.
     struct ProposalParameters {
         uint16 minApprovals;
+        uint16 minConfirmations;
         uint64 snapshotBlock;
         uint64 startDate;
         uint64 endDate;
-        // New data
         uint64 delayDuration;
         bool emergency;
         uint16 emergencyMinApprovals;
@@ -78,6 +79,7 @@ contract PolygonMultisig is
     /// @notice A container for the plugin settings.
     /// @param onlyListed Whether only listed addresses can create a proposal or not.
     /// @param minApprovals The minimal number of approvals required for a proposal to pass.
+    /// @param minConfirmations The minimal number of confirmations required for a proposal to pass.
     /// @param emergencyMinApprovals The minimal number of approvals required for an emergency proposal to pass.
     /// @param delayDuration The duration of the delay.
     /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
@@ -85,7 +87,7 @@ contract PolygonMultisig is
     struct MultisigSettings {
         bool onlyListed;
         uint16 minApprovals;
-        // New data
+        uint16 minConfirmations;
         uint16 emergencyMinApprovals;
         uint64 delayDuration;
         bool memberOnlyProposalExecution;
@@ -188,9 +190,15 @@ contract PolygonMultisig is
     /// @notice Emitted when the plugin settings are set.
     /// @param onlyListed Whether only listed addresses can create a proposal.
     /// @param minApprovals The minimum amount of approvals needed to pass a proposal.
+    /// @param minConfirmations The minimum amount of approvals needed to pass a proposal.
+    /// @param emergencyMinApprovals The minimum amount of approvals needed to pass an emergency proposal.
+    /// @param delayDuration The duration of the delay.
+    /// @param memberOnlyProposalExecution Boolean to set if only multisig members should be allowed to execute
+    /// @param minExtraDuration The minimal extra duration for a proposal endTime for people to vote.
     event MultisigSettingsUpdated(
         bool onlyListed,
         uint16 indexed minApprovals,
+        uint16 indexed minConfirmations,
         uint16 emergencyMinApprovals,
         uint64 delayDuration,
         bool memberOnlyProposalExecution,
@@ -354,6 +362,7 @@ contract PolygonMultisig is
             proposal_.parameters.startDate = _startDate;
             proposal_.parameters.endDate = _endDate;
             proposal_.parameters.minApprovals = multisigSettings.minApprovals;
+            proposal_.parameters.minConfirmations = multisigSettings.minConfirmations;
             proposal_.parameters.emergency = _emergency;
             proposal_.parameters.emergencyMinApprovals = multisigSettings.emergencyMinApprovals;
             proposal_.parameters.delayDuration = multisigSettings.delayDuration;
@@ -534,10 +543,6 @@ contract PolygonMultisig is
         Proposal storage proposal_ = proposals[_proposalId];
         uint64 currentTimestamp64 = block.timestamp.toUint64();
 
-        if (!isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)) {
-            revert NotInMemberList(_msgSender());
-        }
-
         if (uint64(proposal_.parameters.endDate) < currentTimestamp64) {
             revert MetadataCantBeSet();
         }
@@ -550,6 +555,10 @@ contract PolygonMultisig is
     /// @param _secondaryMetadata The secondary metadata of the proposal.
     function startProposalDelay(uint256 _proposalId, bytes calldata _secondaryMetadata) external {
         Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
+
+        if (!isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)) {
+            revert NotInMemberList(_msgSender());
+        }
 
         if (proposal_.parameters.emergency) {
             revert EmergencyProposalCantBeDelayed();
@@ -680,7 +689,7 @@ contract PolygonMultisig is
             proposal_.parameters.emergency
                 ? proposal_.approvals >= proposal_.parameters.emergencyMinApprovals
                 : (proposal_.approvals >= proposal_.parameters.minApprovals &&
-                    proposal_.confirmations >= proposal_.parameters.minApprovals);
+                    proposal_.confirmations >= proposal_.parameters.minConfirmations);
     }
 
     /// @notice Internal function to check if a proposal vote is still open.
@@ -718,7 +727,8 @@ contract PolygonMultisig is
 
         if (
             _multisigSettings.minApprovals < MIN_APPROVALS_THREESHOLDS ||
-            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREESHOLDS
+            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREESHOLDS ||
+            _multisigSettings.minConfirmations < MIN_CONFIRMATIONS_THREESHOLDS
         ) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
@@ -729,6 +739,7 @@ contract PolygonMultisig is
         emit MultisigSettingsUpdated({
             onlyListed: _multisigSettings.onlyListed,
             minApprovals: _multisigSettings.minApprovals,
+            minConfirmations: _multisigSettings.minConfirmations,
             emergencyMinApprovals: _multisigSettings.emergencyMinApprovals,
             delayDuration: _multisigSettings.delayDuration,
             memberOnlyProposalExecution: _multisigSettings.memberOnlyProposalExecution,
