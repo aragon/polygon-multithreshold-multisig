@@ -99,6 +99,7 @@ contract PolygonMultisigScript is Script {
             .MultisigSettings({
                 onlyListed: true,
                 minApprovals: 1,
+                minConfirmations: 1,
                 emergencyMinApprovals: 1,
                 delayDuration: 1 days,
                 memberOnlyProposalExecution: false,
