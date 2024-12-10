@@ -175,7 +175,7 @@ contract PolygonMultisig is
     error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
 
     /// @notice Emitted when the proposal delay has started.
-    event ProposalDelayStarted(uint256 proposalId, bytes secondaryMetadata);
+    event ProposalDelayStarted(uint256 proposalId);
 
     /// @notice Emitted when a proposal is approved by an approver.
     /// @param proposalId The ID of the proposal.
@@ -552,8 +552,7 @@ contract PolygonMultisig is
 
     /// @notice Allows to start the delay for a proposal.
     /// @param _proposalId The ID of the proposal.
-    /// @param _secondaryMetadata The secondary metadata of the proposal.
-    function startProposalDelay(uint256 _proposalId, bytes calldata _secondaryMetadata) external {
+    function startProposalDelay(uint256 _proposalId) external {
         Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
 
         if (!isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)) {
@@ -568,10 +567,13 @@ contract PolygonMultisig is
             revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);
         }
 
-        setSecondaryMetadata(_proposalId, _secondaryMetadata);
+        // Avoid passing if the secondary metadata hasn't been set
+        if (proposal_.secondaryMetadata.length != 0) {
+            revert SecondaryMetadataAlreadySet();
+        }
 
         proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();
-        emit ProposalDelayStarted(_proposalId, _secondaryMetadata);
+        emit ProposalDelayStarted(_proposalId);
     }
 
     /// @inheritdoc IMultisig
