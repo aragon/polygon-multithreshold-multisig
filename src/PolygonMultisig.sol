@@ -22,9 +22,9 @@ contract PolygonMultisig is
 {
     using SafeCastUpgradeable for uint256;
 
-    /// @notice MIN_APPROVALS_THREEHOLDS is the minimal number of approvals required for a proposal to pass.
-    uint256 immutable MIN_APPROVALS_THREESHOLDS = 1;
-    uint256 immutable MIN_CONFIRMATIONS_THREESHOLDS = 1;
+    /// @notice MIN_APPROVALS_THRESHOLDS is the minimal number of approvals required for a proposal to pass.
+    uint256 immutable MIN_APPROVALS_THRESHOLD = 1;
+    uint256 immutable MIN_CONFIRMATIONS_THRESHOLD = 1;
 
     /// @notice A container for proposal-related information.
     /// @param executed Whether the proposal is executed or not.
@@ -726,9 +726,9 @@ contract PolygonMultisig is
         }
 
         if (
-            _multisigSettings.minApprovals < MIN_APPROVALS_THREESHOLDS ||
-            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THREESHOLDS ||
-            _multisigSettings.minConfirmations < MIN_CONFIRMATIONS_THREESHOLDS
+            _multisigSettings.minApprovals < MIN_APPROVALS_THRESHOLD ||
+            _multisigSettings.emergencyMinApprovals < MIN_APPROVALS_THRESHOLD ||
+            _multisigSettings.minConfirmations < MIN_CONFIRMATIONS_THRESHOLD
         ) {
             revert MinApprovalsOutOfBounds({limit: 1, actual: _multisigSettings.minApprovals});
         }
