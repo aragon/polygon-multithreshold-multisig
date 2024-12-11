@@ -567,11 +567,6 @@ contract PolygonMultisig is
             revert InsuficientApprovals(proposal_.approvals, proposal_.parameters.minApprovals);
         }
 
-        // Avoid passing if the secondary metadata hasn't been set
-        if (proposal_.secondaryMetadata.length != 0) {
-            revert SecondaryMetadataAlreadySet();
-        }
-
         proposal_.firstDelayStartTimestamp = block.timestamp.toUint64();
         emit ProposalDelayStarted(_proposalId);
     }
