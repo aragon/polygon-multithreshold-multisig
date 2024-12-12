@@ -615,7 +615,7 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         vm.warp(block.timestamp + 1 days + 1);
         vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
         plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
-        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.MetadataCantBeSet.selector));
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.DelayCantBeSet.selector));
         plugin.startProposalDelay(proposalId);
     }
 
@@ -642,10 +642,19 @@ contract PolygonMultisigSecondaryMetadata is PolygonMultisigTest {
         });
         plugin.approve(_secondProposalId);
         plugin.setSecondaryMetadata(_secondProposalId, bytes("ipfs://world"));
-        vm.expectRevert(
-            abi.encodeWithSelector(PolygonMultisig.EmergencyProposalCantBeDelayed.selector)
-        );
+        vm.expectRevert(abi.encodeWithSelector(PolygonMultisig.DelayCantBeSet.selector));
         plugin.startProposalDelay(_secondProposalId);
+    }
+
+    function test_reverts_if_attempting_to_start_delay_multiple_times() public {
+        vm.startPrank(address(0xB0b));
+        plugin.approve(proposalId);
+        plugin.setSecondaryMetadata(proposalId, bytes("ipfs://world"));
+        plugin.startProposalDelay(proposalId);
+        (, , , , , , , bytes memory _secondaryMetadata, ) = plugin.getProposalByIndex(0);
+        assertEq(_secondaryMetadata, bytes("ipfs://world"));
+        vm.expectRevert();
+        plugin.startProposalDelay(proposalId);
     }
 }
 

@@ -129,6 +129,9 @@ contract PolygonMultisig is
     /// @notice Thrown when the secondary metadata can't be set.
     error MetadataCantBeSet();
 
+    /// @notice Thrown when the secondary metadata can't be set.
+    error DelayCantBeSet();
+
     /// @notice Thrown if an approver is not allowed to cast an approve. This can be because the proposal
     /// - is not open,
     /// - was executed, or
@@ -167,9 +170,6 @@ contract PolygonMultisig is
 
     /// @notice Secondary metadata was already set before and can only be set once
     error SecondaryMetadataAlreadySet();
-
-    /// @notice The delay can't be started for an emergency proposal
-    error EmergencyProposalCantBeDelayed();
 
     /// @notice Thrown if the proposal has not enough approvals to start the delay.
     error InsuficientApprovals(uint16 approvals, uint16 minApprovals);
@@ -537,30 +537,23 @@ contract PolygonMultisig is
         return proposals[_proposalId].approvers[_account];
     }
 
-    function _checkProposalForMetadata(
-        uint256 _proposalId
-    ) internal view returns (Proposal storage) {
-        Proposal storage proposal_ = proposals[_proposalId];
-        uint64 currentTimestamp64 = block.timestamp.toUint64();
-
-        if (uint64(proposal_.parameters.endDate) < currentTimestamp64) {
-            revert MetadataCantBeSet();
-        }
-
-        return proposal_;
-    }
-
     /// @notice Allows to start the delay for a proposal.
     /// @param _proposalId The ID of the proposal.
     function startProposalDelay(uint256 _proposalId) external {
-        Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
+        Proposal storage proposal_ = proposals[_proposalId];
+
+        uint64 currentTimestamp64 = block.timestamp.toUint64();
+
+        if (
+            uint64(proposal_.parameters.endDate) < currentTimestamp64 ||
+            proposal_.parameters.emergency ||
+            proposal_.firstDelayStartTimestamp != 0
+        ) {
+            revert DelayCantBeSet();
+        }
 
         if (!isListedAtBlock(_msgSender(), proposal_.parameters.snapshotBlock)) {
             revert NotInMemberList(_msgSender());
-        }
-
-        if (proposal_.parameters.emergency) {
-            revert EmergencyProposalCantBeDelayed();
         }
 
         if (proposal_.approvals < proposal_.parameters.minApprovals) {
@@ -751,9 +744,10 @@ contract PolygonMultisig is
         uint256 _proposalId,
         bytes calldata _secondaryMetadata
     ) public auth(SET_SECONDARY_METADATA_PERMISSION_ID) {
-        Proposal storage proposal_ = _checkProposalForMetadata(_proposalId);
+        Proposal storage proposal_ = proposals[_proposalId];
+        uint64 currentTimestamp64 = block.timestamp.toUint64();
 
-        if (proposal_.executed) {
+        if (proposal_.executed || uint64(proposal_.parameters.endDate) < currentTimestamp64) {
             revert MetadataCantBeSet();
         }
 
