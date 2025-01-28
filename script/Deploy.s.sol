@@ -19,11 +19,29 @@ contract PolygonMultisigScript is Script {
     address[] pluginAddress;
     address secondaryMetadataAdmin;
 
+    // Deployment Parameters
+    bool onlyListed;
+    uint16 minApprovals;
+    uint16 minConfirmations;
+    uint16 emergencyMinApprovals;
+    uint64 delayDuration;
+    bool memberOnlyProposalExecution;
+    uint256 minExtraDuration;
+
     function setUp() public {
         pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
         daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
         nameWithEntropy = string.concat("polygon-multisig-", vm.toString(block.timestamp));
         secondaryMetadataAdmin = vm.envAddress("SECONDARY_METADATA_ADMIN");
+
+        // Deployment Plugin Parameters
+        onlyListed = true;
+        minApprovals = 7;
+        minConfirmations = 1;
+        emergencyMinApprovals = 11;
+        delayDuration = 1 days;
+        memberOnlyProposalExecution = false;
+        minExtraDuration = 0.5 days;
     }
 
     function run() public {
@@ -92,18 +110,21 @@ contract PolygonMultisigScript is Script {
     function getPluginSettings(
         PluginRepo pluginRepo
     ) public view returns (DAOFactory.PluginSettings[] memory pluginSettings) {
-        // TODO: Get the members from a json file
-        address[] memory members = new address[](1);
-        members[0] = address(msg.sender);
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/utils/multisig-addresses.json");
+        string memory json = vm.readFile(path);
+
+        address[] memory members = vm.parseJsonAddressArray(json, "$.addresses");
+
         PolygonMultisig.MultisigSettings memory multisigSettings = PolygonMultisig
             .MultisigSettings({
-                onlyListed: true,
-                minApprovals: 1,
-                minConfirmations: 1,
-                emergencyMinApprovals: 1,
-                delayDuration: 1 days,
-                memberOnlyProposalExecution: false,
-                minExtraDuration: 0.5 days
+                onlyListed: onlyListed,
+                minApprovals: minApprovals,
+                minConfirmations: minConfirmations,
+                emergencyMinApprovals: emergencyMinApprovals,
+                delayDuration: delayDuration,
+                memberOnlyProposalExecution: memberOnlyProposalExecution,
+                minExtraDuration: minExtraDuration
             });
         bytes memory pluginSettingsData = abi.encode(
             members,

@@ -537,7 +537,7 @@ contract PolygonMultisig is
         return proposals[_proposalId].approvers[_account];
     }
 
-    /// @notice Allows to start the delay for a proposal.
+    /// @notice Allows to start the delay for a proposal. Can only be done for normal proposals right after approvals are reached.
     /// @param _proposalId The ID of the proposal.
     function startProposalDelay(uint256 _proposalId) external {
         Proposal storage proposal_ = proposals[_proposalId];
@@ -645,7 +645,7 @@ contract PolygonMultisig is
             proposal_.firstDelayStartTimestamp + proposal_.parameters.delayDuration >
             block.timestamp
         ) {
-            // The delay has not started yet or has finished
+            // The delay has not started yet or hasn't ended
             return false;
         }
 
@@ -757,5 +757,5 @@ contract PolygonMultisig is
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting down storage in the inheritance chain.
     /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-    uint256[47] private __gap;
+    uint256[50] private __gap;
 }
