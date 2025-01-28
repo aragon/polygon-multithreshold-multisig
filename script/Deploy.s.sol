@@ -31,17 +31,17 @@ contract PolygonMultisigScript is Script {
     function setUp() public {
         pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
         daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
-        nameWithEntropy = string.concat("polygon-multisig-", vm.toString(block.timestamp));
+        nameWithEntropy = vm.envOr("NAME_WITH_ENTROPY", string.concat("polygon-multisig-", vm.toString(block.timestamp)));
         secondaryMetadataAdmin = vm.envAddress("SECONDARY_METADATA_ADMIN");
 
         // Deployment Plugin Parameters
-        onlyListed = true;
-        minApprovals = 7;
-        minConfirmations = 1;
-        emergencyMinApprovals = 11;
-        delayDuration = 1 days;
-        memberOnlyProposalExecution = false;
-        minExtraDuration = 0.5 days;
+        onlyListed = vm.envBool("ONLY_LISTED");
+        minApprovals = uint16(vm.envUint("MIN_APPROVALS"));
+        minConfirmations = uint16(vm.envUint("MIN_CONFIRMATIONS"));
+        emergencyMinApprovals = uint16(vm.envUint("EMERGENCY_MIN_APPROVALS"));
+        delayDuration = uint64(vm.envUint("DELAY_DURATION"));
+        memberOnlyProposalExecution = vm.envBool("MEMBER_ONLY_PROPOSAL_EXECUTION");
+        minExtraDuration = vm.envUint("MIN_EXTRA_DURATION");
     }
 
     function run() public {
