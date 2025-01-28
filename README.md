@@ -6,7 +6,7 @@ Welcome to the Polygon Multi-threshold Smart Contract Upgrades Plugin for Aragon
 
 - **Dual Proposal Types**: Standard and Emergency proposals with different thresholds.
 - **Configurable Thresholds**: Set distinct approval requirements for standard and emergency proposals.
-- **Delayed Confirmation**: Standard proposals include an offchain voting period before final execution.
+- **Delayed Confirmation**: Standard proposals include an off-chain voting period before final confirmation and execution.
 - **Customizable Execution**: Execute proposals by anyone or only by members.
 
 ## 🛠️ Usage
@@ -19,10 +19,12 @@ Welcome to the Polygon Multi-threshold Smart Contract Upgrades Plugin for Aragon
 
 2. **Delay Period**:
    - After initial approvals, a delay period begins.
-   - Offchain voting can occur during this period.
+   - Off-chain voting can occur during this period.
+   - Secondary metadata can be added anytime before this period ends.
 
 3. **Confirmation**:
-   - Post delay, additional member approvals equal to the initial threshold are needed.
+   - Post delay, additional member approvals, titled confirmations, are needed before proposals can be executed.
+   - Confirmation threshold (configurable) **may differ from the initial approval threshold**.
 
 4. **Execution**:
    - Can be executed by anyone or only by members (set in the config).
@@ -42,8 +44,9 @@ Welcome to the Polygon Multi-threshold Smart Contract Upgrades Plugin for Aragon
 
 ### Setting Thresholds
 
-- **Standard Proposal Threshold**: Number of approvals required to start the delay period and to confirm the execution.
-- **Emergency Proposal Threshold**: Number of approvals required for immediate execution.
+- **Standard Proposal Approval Threshold**: Number of approvals required to start the delay period
+- **Standard Proposal Confirmation Threshold**: Number of approvals required to confirm the execution of a proposal
+- **Emergency Proposal Approval Threshold**: Number of approvals required for immediate execution.
 
 
 ## 📈 Proposal Flow
